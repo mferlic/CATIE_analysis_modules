@@ -1,0 +1,349 @@
+---
+title: "V3: Secondary Aims Analysis"
+subtitle: "Using moderators and Q-learning for more deeply-tailored AI"
+author:   
+  - name: Mason Ferlic
+    orcid: 0000-0003-4170-2722
+  - name: Jamie Yap
+    orcid: 0000-0002-0899-7146
+  - name: John J. Dziak
+    orcid: 0000-0003-0762-5495
+  - name: Daniel Almirall
+    orcid: 0000-0002-9697-6600
+format: 
+  html:
+    page-layout: full
+    df-print: kable
+    code-overflow: scroll
+    code-line-numbers: true
+    toc: true
+    toc-location: left
+    toc-depth: 3
+    number-sections: true
+    number-depth: 2
+    embed-resources: true
+editor: visual
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(tidy = TRUE, fig.pos = 'H', warning = FALSE, message = FALSE, digits = 2)
+
+options(digits = 3)
+```
+
+## Learning Goals
+
+Learn how to examine moderators of first and second-stage treatment effects
+
+-   Test moderator for significance
+
+-   Interaction plot to determine if moderator is useful tailoring variable
+
+Learn how Q-learning works
+
+-   Implement using the R Package `qlaci`
+
+## Setup
+
+Load required packages (these should be installed if you ran the setup script!)
+
+```{r}
+#| results: hide
+#| warning: false
+
+library(geepack)
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+library(qlaci)
+```
+
+## Load data
+
+This is data that was *simulated* to mimic data arising from the ADHD SMART study (PI: William Pelham). An accompanying handout ("ADHD Handout.pdf") describes the variables in the data.
+
+```{r}
+# Load data
+adhd <- read.csv("data/adhd-simulated-2023.csv")
+```
+
+### Examine data
+
+```{r}
+#| tbl-cap: "ADHD data.frame"
+head(adhd)
+```
+
+### Clean data
+
+Here we fill missing values and grand mean center the baseline covariates.
+
+```{r}
+# Fill NA's with zero (A2 and NRtime is undefined for Responders)
+adhd[is.na(adhd)] <- 0
+
+# Grand mean center all baseline covariates, append '_c' for centered
+adhd_c <- adhd %>% mutate(across(c(odd, severity, priormed, race),  
+                                 ~ .x - mean(.x),
+                                 .names = "{.col}_c"))
+```
+
+## Moderators of stage 1 main effect
+
+We'll start by fitting a **moderated regression model** to examine whether baseline variable `priormed` is a moderator of first-stage treatment $A_1$ on end-of study outcome $Y_2$ controlling for other baseline covariates $\mathbf{X}_c$ (mean centered). The model is as follows:
+
+$$
+\begin{gather}
+E[Y_2 \mid \mathbf{X}_c, \text{priormed}, A_1] = \beta_0 + 
+\eta^TX_c + \beta_1\text{priormed} + 
+\beta_2A_1 + \beta_3(A_1 \times \text{priormed})
+\end{gather}
+$$
+
+```{r}
+# Fit a linear model to test if priormed moderates A1
+mod1 <- geepack::geeglm(Y2 ~ odd_c + severity_c + race_c + priormed + 
+                          A1 + priormed:A1, data = adhd_c, id = ID)
+
+summary(mod1)
+```
+
+Here we find that the interaction term is significant, indicating that `priormed` is a moderator of stage 1 treatment.
+
+### Marginal means of stage 1
+
+We will use a very powerful package called `emmeans` to estimate the marginal means given a set of factors.
+
+```{r}
+em1 <- emmeans::emmeans(mod1, ~ A1 | priormed, weights = "prop")
+print(em1)
+```
+
+```{r}
+contrast(em1, method = "revpairwise")
+```
+
+### Interaction plot of stage 1
+
+We can also use `emmeans` to plot the estimated marginal means.
+
+```{r}
+ep1 <- emmeans::emmip(em1, A1 ~ priormed, style = "factor", )
+ep1 + theme_classic() +
+  labs(title = "Moderator analysis of stage 1 treatment",
+       y = "EOS School Performance (higher is better)") +
+  scale_x_discrete(labels = c("No Prior Med", "Prior Med")) +
+  scale_color_manual("A1", 
+                     values = c("-1" = "red", "1" = "blue"),
+                     labels = c("-1" = "-1 MED", "1" = "1 BMOD"))
+```
+
+### Knowledge check:
+
+1.  What is the effect of starting an AI with BMOD (1) vs MED (-1) for those on prior med? Is this effect significant?
+2.  Do the results of the moderator regressions suggest we can use baseline covariates to tailor first-stage treatment? Why?
+
+## Moderators of stage 2 treatment
+
+Here we fit a **moderated regression model** using the data from non-responders. The goal is to discover if we can use *the initial treatment* `A1` and *adherence to initial treatment* `adherence` to select a tactic for **non-responders**, adjusting for baseline covariates $\mathbf{X}_c$. The model is as follows:
+
+$$
+\begin{gather*} 
+E[Y \mid \mathbf{X}_c, A_1, \text{adherence}, A_2, R = 0] = \eta_0 + \eta^T\mathbf{X}_c + \eta_1 A_{1} + \eta_2\text{adherence} + \beta_1 A_2 + \\ 
+\beta_2 (A_2 \times A_1) + \beta_{3} (A_2 \times \text{adherence})
+\end{gather*}
+$$
+
+```{r}
+# Filter to non-responders, then center among non-responders
+adhd_nr_c <- adhd %>% filter(R == 0) %>%
+  mutate(across(.cols = c(odd, severity, priormed, race, NRtime, adherence),
+                ~ .x - mean(.x, na.rm = TRUE),
+                .names = "{.col}_c"))
+
+mod2 <- geepack::geeglm(Y2 ~ odd_c + severity_c + priormed_c + race_c + 
+                          A1*A2 + A2*adherence, id = ID, data = adhd_nr_c)
+
+summary(mod2)
+```
+
+\
+Here we find that `adherence` is a significant moderator of stage 2 treatment $A_2$, but $A_1$ is not. Only the second-stage coefficients, $\beta$, are causal. The first-stage coefficients, $\eta$, are non-causal and will be biased as a result of sub-setting to non-responders.
+
+### Marginal means of stage 2
+
+```{r}
+em2 <- emmeans::emmeans(mod2, ~ A1 + A2 | adherence, weights = "prop")
+print(em2)
+```
+
+### Interaction plot of stage 2
+
+```{r}
+ep2 <- emmeans::emmip(em2,  A1 + A2 ~ adherence, style = "factor")
+
+# Prettify plot
+ep2$data %>% mutate(across(1:3, as.factor)) %>%
+  ggplot(aes(xvar, yvar, color = A2, linetype = A1, group = tvar)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual("A2", values = c("-1" = "darkgreen", "1" = "purple"), 
+                     labels = c("-1" = "-1 AUG", "1" = "1 INT")) +
+  scale_linetype_manual("A1", values = c("-1" = 1,"1" = 6), 
+                        labels = c("-1" = "-1 MED", "1" = "1 BMOD")) +
+  labs(title = "Moderator analysis of stage 2 treatment",
+       x = "Adherence to stage 1",
+       y = "EOS School Performance \n (higher is better)") +
+  scale_x_discrete(labels = c("Non-adherent", "Adherent")) +
+  theme_classic()
+```
+
+### Knowledge check:
+
+1.  Why do we subset to non-responders when fitting a second-stage moderated regression?
+2.  What is the optimal tactic for non-adhering, non-responders to BMOD(1)? MED(-1)?
+
+## Q-learning
+
+We use Q-learning to estimate the effect of a more deeply-tailored AI combining the optimal tactic at each stage. Estimation has three steps:
+
+1.  Fit stage 2 moderator regression (`mod2`!) ✅
+2.  Predict the outcome under the optimal decision rule: $\hat{Y}^{opt}_i$
+3.  Fit stage 1 moderator regression on $\hat{Y}^{opt}_i$
+
+### Predict optimal outcome
+
+```{r}
+# Predicted outcome under observed treatment A2
+Y2_f <- fitted(mod2)[,1]
+
+# Make counterfactual data.frame
+adhd_nr_alt <- adhd_nr_c %>% mutate(A2 = -1 * A2)
+
+# Predict outcome under counterfactual treatment a2
+Y2_alt <- predict(mod2, newdata = adhd_nr_alt)
+
+# data.frame to store optimal outcome under stage 2 tactic
+adhd_nr_opt <- adhd_c %>% filter(R == 0)
+adhd_nr_opt <- adhd_nr_opt %>% 
+  mutate(Y2 = pmax(Y2_f, Y2_alt),
+         A2_opt = if_else(Y2_alt > Y2_f, -1 * A2, A2))
+
+# merge non-responders w/ responders
+adhd_opt <- bind_rows(adhd_nr_opt, adhd_c %>% filter(R == 1))
+```
+
+### Fit stage 1 moderated regression controlling for optimal second-stage
+
+Now we fit a model for the first stage on the `adhd.opt` data.frame which controls for the optimal second stage. The moderator of interest is `priormed`.
+
+$$
+\begin{gather}
+E[\hat{Y}^{opt} \mid \mathbf{X}_c, \text{priormed}, A_1] = \beta_0 + 
+\eta^TX_c + \beta_1\text{priormed} + 
+\beta_2A_1 + \beta_3(A_1 \times \text{priormed})
+\end{gather}
+$$
+
+```{r}
+Qmod1 <- geepack::geeglm(Y2 ~ odd_c + severity_c + race_c + A1*priormed,
+                         id = ID,
+                         data = adhd_opt)
+
+summary(Qmod1)
+```
+
+::: callout-warning
+The standard errors are incorrect due to estimating $\hat{Y}^{opt}$. We need special software (see `qlaci`) to do proper inference.
+:::
+
+### Interaction plot of optimal tactic
+
+```{r}
+qem1 <- emmeans::emmeans(Qmod1, ~ A1 | priormed, weights = "prop")
+qep1 <- emmeans::emmip(qem1, A1 ~ priormed, style = "factor")
+
+# Prettify plot  
+qep1$data %>% mutate(across(1:2, as.factor)) %>%
+  ggplot(aes(xvar, yvar, color = A1, group = tvar)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_color_manual("A1", values = c("-1" = "red", "1" = "blue"), 
+                     labels = c("-1" = "-1 MED", "1" = "1 BMOD")) +
+  theme_classic() +
+  labs(title = "Moderator of stage 1 controlling for optimal stage 2",
+       x = "Medication use in Prior year",
+       y = "EOS School Performance \n (higher is better)") +
+  scale_x_discrete(labels = c("No prior med", "Prior med")) +
+  scale_y_continuous(n.breaks = 8)
+```
+
+## The `qlaci` package
+
+First, we need to specify the contrast matrix that will be used for the *stage-1 regression* (step 3 of Q-learning). `qlaci()` uses this matrix to estimate the mean outcomes under each of the first-stage treatments (averaging over the future optimal response) at both levels of `priormed`. We also specify a contrast that estimates the mean outcome if everyone in the study had received the optimal more deeply-tailored AI (averaging over levels of `priormed`).
+
+```{r}
+pPM <- mean(adhd_c$priormed) # probability of priormed
+
+## contrast matrix - we must transpose this for qlaci
+c1 <-
+  rbind(
+    "Mean Y under bmod, prior med"          = c(1, rep(0, 3), 1,  1,  1),
+    "Mean Y under med, prior med"           = c(1, rep(0, 3), 1, -1, -1),
+    "Mean diff (bmod-med) for prior med"    = c(0, rep(0, 3), 0,  2,  2),
+    "Mean Y under bmod, no prior med"       = c(1, rep(0, 3), 0,  1,  0),
+    "Mean Y under med, no prior med"        = c(1, rep(0, 3), 0,  -1, 0),
+    "Mean diff (bmod-med) for no prior med" = c(0, rep(0, 3), 0,  2,  0),
+    "Mean Y Optimal AI"                    = c(1, rep(0, 3), pPM, 1 -
+                                                  2 * pPM, -pPM)
+  )
+```
+
+The following are the arguments we need to provide to `qlaci()`:
+
+-   `H10`: Baseline covariates we want to adjust for in the first-stage regression.
+-   `H11`: Variables that interact with first-stage treatment in the first-stage regression (candidate variables for deeper tailoring).
+-   `A1`: Indicator for first-stage treatment
+-   `Y1`: A continuous intermediate outcome. Here, we don't have an intermediate outcome, so we set this to zero for everyone.
+-   `H20`: A matrix, with each column containing data for a main-effects term in the second-stage regression (analogous to `H10`).
+-   `H21`: Variables that interact with second-stage treatment `A2` in the second-stage regression (candidate variables for deeper tailoring).
+-   `A2`: Indicator for second-stage treatment
+-   `Y2`: End-of-study outcome
+-   `S`: Indicator for whether an individual was re-randomized (1 = re-randomized; 0 = otherwise)
+-   `c1`: Contrast matrix for first-stage regression (see above)
+
+```{r}
+attach(adhd_c) # with attach we can be lazy and refer to variables in the data.frame directly
+
+q1 <-  qlaci::qlaci(H10 = cbind(1, odd_c, severity_c, race_c, priormed),
+                   H11 = cbind(A1 = 1, "A1:priormed" = priormed),
+                   A1 = A1,
+                   Y1 = rep(0, nrow(adhd_c)), # set to zero for everyone; we care only about EOS outcome
+                   H20 = cbind(1, odd_c, severity_c, race_c, 
+                               priormed, A1, adherence),
+                   H21 = cbind(A2 = 1, "A1:A2" = A1, 
+                               "A2:adherence" = adherence),
+                   A2 = A2,
+                   Y2 = Y2,
+                   S = 1 - R,
+                   c1 = t(c1))
+
+detach(adhd_c)
+```
+
+### qlaci results
+
+The the coefficients estimated by `qlaci()` combined with the user specified contrast matrix give us the means under first-stage treatment options for levels of `priormed` with valid confidence intervals.
+
+-   INSERT MARGINAL MEANS FROM PRIMARY AIMS TO COMPARE
+
+```{r}
+#| tbl-cap: "Estimated optimal AI tailoring on prior med and adherence"
+data.frame(q1$ci1)
+```
+
+### Knowledge check:
+
+1.  Why do we need to use Q-learning to estimate a more deeply-tailored AI? What is wrong with simply running two moderator regressions?
+2.  Looking at the above table, what do the two contrasts (bmod - med) for levels of prior med tell us about tailoring?
+3.  Write the decision rules corresponding to the more deeply-tailored AI.
