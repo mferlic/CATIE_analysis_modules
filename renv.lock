@@ -626,13 +626,17 @@
     "qlaci": {
       "Package": "qlaci",
       "Version": "1.0",
-      "Source": "Local",
-      "RemoteType": "local",
-      "RemoteUrl": "~/Dropbox (University of Michigan)/D3Lab/code/qlaci_1.0.tgz",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "d3center-isr",
+      "RemoteRepo": "qlaci",
+      "RemoteRef": "master",
+      "RemoteSha": "a0ebb23ecd38abde6b36770c5d0329f37e3a3a30",
       "Requirements": [
         "R"
       ],
-      "Hash": "c21f55e856d3316fda03ca567702850f"
+      "Hash": "4ec3c7f5463e3641a6cb97b4c2721f1d"
     },
     "rappdirs": {
       "Package": "rappdirs",
