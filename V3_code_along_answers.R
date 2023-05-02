@@ -13,8 +13,7 @@
 # Outline ---------------------------------------------------------------
 
 # 1. Setup and load the simulated ADHD data (done for you)
-# 2. Visualize baseline variable ODD
-# 3. Fit a moderated regression model for ODD
+# 3. Fit a second-stage moderated regression model for ODD
 # 4. Test if ODD is a useful tailoring variable
 
 # Setup -------------------------------------------------------------------

@@ -3215,8 +3215,6 @@ background-origin: content-box;
 
 <section id="learning-goals" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Learning Goals</h1>
-<p>Typical secondary aims analysis involves using data from a SMART to learn a set of decision rules for a more deeply-tailored adaptive intervention that leads to better outcomes. In this workbook, we will use a subset of candidate moderators to test which variables are useful for tailoring first and second-stage intervention options in a 2-stage SMART.</p>
-<p>To learn an optimal decision rule in a 2-arm RCT we could simply fit a moderated regression to determine if baseline covariates are useful for tailoring treatment assignment. In a prototypical SMART we have two stages of treatment assignment and you may be thinking, can’t we just fit moderated regressions for first and second-stage, and taken together, we have a proposal for a more deeply-tailored AI? The answer is no! These separate regressions don’t “talk” to each other. That is, we want to make the optimal first-stage decision accounting for the fact that, in the future, we will be making an optimal second-stage decision.</p>
 <p>In this workbook we will:</p>
 <ol type="1">
 <li>Learn how moderators of first and second-stage treatment effects can be used to construct optimal adaptive interventions
@@ -3246,7 +3244,7 @@ background-origin: content-box;
 </section>
 <section id="load-data" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Load data</h1>
-<p>This is data that was <em>simulated</em> to mimic data arising from the ADHD SMART study (PI: William Pelham). An accompanying handout (“ADHD_SMART_handout.pdf”) describes the variables in the data set.</p>
+<p>This is data that was <em>simulated</em> to mimic data arising from the ADHD SMART study (PI: William Pelham).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Load data</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a>dat_adhd <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/adhd-simulated-2023.csv&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3497,7 +3495,7 @@ ADHD dataset variable descriptions
 </section>
 <section id="cleantransform-data" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="cleantransform-data"><span class="header-section-number">3.2</span> Clean/transform data</h2>
-<p>Here we grand mean center the baseline covariates. This does not change the point estimates, but is useful when interpreting model coefficients or when hand coding contrasts.</p>
+<p>Here we grand mean center the baseline covariates.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># Grand mean center all baseline covariates, append &#39;_c&#39; for centered</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a>dat_adhd_c <span class="ot">&lt;-</span> dat_adhd <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">odd_c =</span> odd <span class="sc">-</span> <span class="fu">mean</span>(odd),</span>
@@ -3525,7 +3523,7 @@ ADHD dataset variable descriptions
 </blockquote>
 <section id="regression-model" class="level3">
 <h3 class="anchored" data-anchor-id="regression-model">Regression model</h3>
-<p>We test this secondary aim by fitting a <strong>moderated regression model</strong> using data from non-responders. This model examines whether binary intermediate outcome variable <code>adherence</code>, and first-stage treatment <span class="math inline">\(A_1\)</span>, moderate the effect of second-stage treatment <span class="math inline">\(A_2\)</span> on end-of-year outcome <span class="math inline">\(Y_2\)</span>, controlling for other baseline covariates <span class="math inline">\(\mathbf{X}\)</span>. The model is as follows:</p>
+<p>We test this secondary aim by fitting a <strong>moderated regression model</strong> using data from non-responders.</p>
 <p><span id="eq-mod2"><span class="math display">\[
 \begin{gather*}
 E[Y \mid \mathbf{X}, A_1, \text{adherence}, A_2, R = 0] = \eta_0 + \eta^T\mathbf{X} + \eta_1 A_{1} + \eta_2\text{adherence} + \beta_1 A_2 + \\
@@ -3764,7 +3762,7 @@ Questions
 </section>
 <section id="marginal-means-of-stage-2" class="level3">
 <h3 class="anchored" data-anchor-id="marginal-means-of-stage-2">Marginal means of stage 2</h3>
-<p>We will use a very powerful package called <code>emmeans</code> to estimate the marginal mean of end-of-year school performance under different treatment/covariate options. We could do this by writing custom contrasts of the model coefficients, but <code>emmeans</code> does this for us.</p>
+<p>We will use a very powerful package called <code>emmeans</code> to estimate the marginal mean of end-of-year school performance under different treatment/covariate options.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -3806,7 +3804,7 @@ Covariance estimate used: vbeta
 Confidence level used: 0.95 </code></pre>
 </div>
 </div>
-<p>The results from the moderated regression and the marginal means output suggest that for those children who are non-adherent (<code>adherence</code> = 0) it is better to Augment (<span class="math inline">\(A2 = -1\)</span>) rather than intensify. Likewise, for those children that are adherent (<code>adherence</code> = 1) it is better to Intensify (<span class="math inline">\(A2=1\)</span>). Notice, our optimal tactic does not depend on first-stage treatment <span class="math inline">\(A1\)</span>.</p>
+<p>The results suggest that for those children who are non-adherent (<code>adherence</code> = 0) it is better to Augment (<span class="math inline">\(A2 = -1\)</span>) rather than intensify. Likewise, for those children that are adherent (<code>adherence</code> = 1) it is better to Intensify (<span class="math inline">\(A2=1\)</span>). Notice, our optimal tactic does not depend on first-stage treatment <span class="math inline">\(A1\)</span>.</p>
 </section>
 <section id="interaction-plot-of-stage-2" class="level3">
 <h3 class="anchored" data-anchor-id="interaction-plot-of-stage-2">Interaction plot of stage 2</h3>
@@ -4036,7 +4034,7 @@ Warning
 <figcaption class="figure-caption">The more deeply-tailored adaptive intervention learned using Q-learning</figcaption>
 </figure>
 </div>
-<p>To estimate the mean outcome under the proposed decision rules we essentially repeat step 2 and create a new data frame with the optimal first-stage tactic by levels of <code>priormed</code>. We use the parametric g-formula and the fitted model from <a href="#eq-Qmod1">Equation 2</a> to compute the mean outcome if every child had received the more deeply-tailored adaptive intervention.</p>
+<p>To estimate the mean outcome if every child had received the more deeply-tailored adaptive intervention we essentially repeat step 2 and create a new data frame with the optimal first-stage tactic by levels of <code>priormed</code>.</p>
 <p><span class="math display">\[
 A1 = \begin{cases}
 1  \text{ BMOD} &amp; \text{ if } \text{ priormed} = 0 \\
@@ -4097,7 +4095,7 @@ Tip
 <p>The qlaci package can be downloaded from the d3c github: <a href="https://github.com/d3center-isr/qlaci">d3center-isr/qlaci</a></p>
 </div>
 </div>
-<p>First, we specify the contrast matrix that will be used for the stage 1 regression (step 3 of Q-learning). <code>qlaci()</code> uses this matrix to estimate the mean outcomes under each of the first-stage treatments (accounting for the future optimal decision) at both levels of <code>priormed</code>. We also specify a contrast that estimates the mean outcome if everyone in the study had received the optimal more deeply-tailored AI.</p>
+<p>First, we specify the contrast matrix that will be used for the stage 1 regression (step 3 of Q-learning).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>prob.pm <span class="ot">&lt;-</span> <span class="fu">mean</span>(dat_adhd_c<span class="sc">$</span>priormed) <span class="co"># probability of priormed, used to calculate mean under optimal decision rules</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a></span>
@@ -4142,7 +4140,7 @@ qlaci() parameters
 </div>
 </div>
 <p>The function <code>qlaci()</code> maximizes the expected outcome for each stage of treatment given a set of moderators.</p>
-<div class="cell" data-hash="V3_secondary_aims_detailed_cache/html/unnamed-chunk-19_64c48c43e99d771b43cba3b8bfd09edb">
+<div class="cell" data-hash="V3_secondary_aims_follow-along_cache/html/unnamed-chunk-19_d3cd94fb1ef5e42a58424f7b7bf28683">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="fu">attach</span>(dat_adhd_c) <span class="co"># with attach we can be lazy and refer to variables in the data.frame by name directly</span></span>
 <span id="cb23-2"><a href="#cb23-2"></a></span>
 <span id="cb23-3"><a href="#cb23-3"></a>q1 <span class="ot">&lt;-</span>  qlaci<span class="sc">::</span><span class="fu">qlaci</span>(<span class="at">H10 =</span> <span class="fu">cbind</span>(<span class="dv">1</span>, odd_c, severity_c, race_c, priormed),</span>
@@ -4160,7 +4158,7 @@ qlaci() parameters
 </div>
 <section id="qlaci-results" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="qlaci-results"><span class="header-section-number">5.1</span> qlaci results</h2>
-<p>The the coefficients estimated by <code>qlaci()</code> combined with the user specified contrast matrix give us the estimated means for first-stage treatment options by levels of <code>priormed,</code> accounting for the optimal second-stage tactic for non-responders. With valid confidence intervals we can test contrasts and even compare to the 4 embedded adaptive interventions found in Virtual Module 2!</p>
+<p>With valid confidence intervals we can test contrasts and even compare to the 4 embedded adaptive interventions found in Virtual Module 2!</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="fu">data.frame</span>(q1<span class="sc">$</span>ci1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -4179,44 +4177,44 @@ qlaci() parameters
 <tr class="odd">
 <td style="text-align: left;">Mean Y under bmod, prior med</td>
 <td style="text-align: right;">3.373</td>
-<td style="text-align: right;">2.737</td>
-<td style="text-align: right;">3.904</td>
+<td style="text-align: right;">2.759</td>
+<td style="text-align: right;">3.901</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Mean Y under med, prior med</td>
 <td style="text-align: right;">3.798</td>
-<td style="text-align: right;">3.222</td>
-<td style="text-align: right;">4.437</td>
+<td style="text-align: right;">3.231</td>
+<td style="text-align: right;">4.453</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Mean diff (bmod-med) for prior med</td>
 <td style="text-align: right;">-0.425</td>
-<td style="text-align: right;">-1.171</td>
-<td style="text-align: right;">0.343</td>
+<td style="text-align: right;">-1.196</td>
+<td style="text-align: right;">0.297</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Mean Y under bmod, no prior med</td>
 <td style="text-align: right;">4.316</td>
-<td style="text-align: right;">3.877</td>
-<td style="text-align: right;">4.672</td>
+<td style="text-align: right;">3.878</td>
+<td style="text-align: right;">4.667</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Mean Y under med, no prior med</td>
 <td style="text-align: right;">2.927</td>
-<td style="text-align: right;">2.489</td>
-<td style="text-align: right;">3.320</td>
+<td style="text-align: right;">2.504</td>
+<td style="text-align: right;">3.341</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Mean diff (bmod-med) for no prior med</td>
 <td style="text-align: right;">1.389</td>
-<td style="text-align: right;">0.771</td>
-<td style="text-align: right;">1.883</td>
+<td style="text-align: right;">0.767</td>
+<td style="text-align: right;">1.861</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Mean Y Optimal AI</td>
 <td style="text-align: right;">4.161</td>
-<td style="text-align: right;">3.786</td>
-<td style="text-align: right;">4.453</td>
+<td style="text-align: right;">3.794</td>
+<td style="text-align: right;">4.452</td>
 </tr>
 </tbody>
 </table>

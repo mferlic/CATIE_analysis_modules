@@ -42,18 +42,15 @@ options(digits = 3)
 
 # Learning Goals
 
-Typical secondary aims analysis involves using data from a SMART to learn a set of decision rules for a more deeply-tailored adaptive intervention that leads to better outcomes. In this workbook, we will use a subset of candidate moderators to test which variables are useful for tailoring first and second-stage intervention options in a 2-stage SMART.
-
-To learn an optimal decision rule in a 2-arm RCT we could simply fit a moderated regression to determine if baseline covariates are useful for tailoring treatment assignment. In a prototypical SMART we have two stages of treatment assignment and you may be thinking, can't we just fit moderated regressions for first and second-stage, and taken together, we have a proposal for a more deeply-tailored AI? The answer is no! These separate regressions don't "talk" to each other. That is, we want to make the optimal first-stage decision accounting for the fact that, in the future, we will be making an optimal second-stage decision.
-
 In this workbook we will:
 
 1.  Learn how moderators of first and second-stage treatment effects can be used to construct optimal adaptive interventions
     -   Fit moderated regression models
     -   Test contrasts and generate interaction plots
 
+```{=html}
 <!-- -->
-
+```
 2.  Learn how Q-learning is used to estimate the effect of a more-deeply tailored AI.
     -   Implement using the R Package `qlaci`
 
@@ -74,7 +71,7 @@ library(qlaci)
 
 # Load data
 
-This is data that was *simulated* to mimic data arising from the ADHD SMART study (PI: William Pelham). An accompanying handout ("ADHD_SMART_handout.pdf") describes the variables in the data set.
+This is data that was *simulated* to mimic data arising from the ADHD SMART study (PI: William Pelham).
 
 ```{r}
 # Load data
@@ -132,7 +129,7 @@ head(dat_adhd, n = 10)
 
 ## Clean/transform data
 
-Here we grand mean center the baseline covariates. This does not change the point estimates, but is useful when interpreting model coefficients or when hand coding contrasts.
+Here we grand mean center the baseline covariates.
 
 ```{r}
 # Grand mean center all baseline covariates, append '_c' for centered
@@ -162,7 +159,7 @@ A common secondary aim is to learn whether we can use baseline or intermediate c
 
 ### Regression model
 
-We test this secondary aim by fitting a **moderated regression model** using data from non-responders. This model examines whether binary intermediate outcome variable `adherence`, and first-stage treatment $A_1$, moderate the effect of second-stage treatment $A_2$ on end-of-year outcome $Y_2$, controlling for other baseline covariates $\mathbf{X}$. The model is as follows:
+We test this secondary aim by fitting a **moderated regression model** using data from non-responders.
 
 $$
 \begin{gather*} 
@@ -213,7 +210,7 @@ The regression model from @eq-mod2 gives us the effect of $A2$ among non-respond
 
 ### Marginal means of stage 2
 
-We will use a very powerful package called `emmeans` to estimate the marginal mean of end-of-year school performance under different treatment/covariate options. We could do this by writing custom contrasts of the model coefficients, but `emmeans` does this for us.
+We will use a very powerful package called `emmeans` to estimate the marginal mean of end-of-year school performance under different treatment/covariate options.
 
 ::: callout-tip
 Marginal means refers to estimating the expected value while holding some covariates constant and averaging over the rest.
@@ -230,7 +227,7 @@ em2 <- emmeans::emmeans(mod2, ~ A1 + A2 | adherence, weights = "proportional")
 print(em2)
 ```
 
-The results from the moderated regression and the marginal means output suggest that for those children who are non-adherent (`adherence` = 0) it is better to Augment ($A2 = -1$) rather than intensify. Likewise, for those children that are adherent (`adherence` = 1) it is better to Intensify ($A2=1$). Notice, our optimal tactic does not depend on first-stage treatment $A1$.
+The results suggest that for those children who are non-adherent (`adherence` = 0) it is better to Augment ($A2 = -1$) rather than intensify. Likewise, for those children that are adherent (`adherence` = 1) it is better to Intensify ($A2=1$). Notice, our optimal tactic does not depend on first-stage treatment $A1$.
 
 ### Interaction plot of stage 2
 
@@ -380,7 +377,7 @@ The results of Q-learning generated a proposal for a more deeply-tailored AI tha
 
 ![The more deeply-tailored adaptive intervention learned using Q-learning](assets/more_deeply_tailored_AI.png){fig-align="center" width="800"}
 
-To estimate the mean outcome under the proposed decision rules we essentially repeat step 2 and create a new data frame with the optimal first-stage tactic by levels of `priormed`. We use the parametric g-formula and the fitted model from @eq-Qmod1 to compute the mean outcome if every child had received the more deeply-tailored adaptive intervention.
+To estimate the mean outcome if every child had received the more deeply-tailored adaptive intervention we essentially repeat step 2 and create a new data frame with the optimal first-stage tactic by levels of `priormed`.
 
 $$
 A1 = \begin{cases} 
@@ -424,7 +421,7 @@ The `qlaci` package performs Q-learning on data arising from a two-stage SMART. 
 The qlaci package can be downloaded from the d3c github: [d3center-isr/qlaci](https://github.com/d3center-isr/qlaci)
 :::
 
-First, we specify the contrast matrix that will be used for the stage 1 regression (step 3 of Q-learning). `qlaci()` uses this matrix to estimate the mean outcomes under each of the first-stage treatments (accounting for the future optimal decision) at both levels of `priormed`. We also specify a contrast that estimates the mean outcome if everyone in the study had received the optimal more deeply-tailored AI.
+First, we specify the contrast matrix that will be used for the stage 1 regression (step 3 of Q-learning).
 
 ```{r}
 prob.pm <- mean(dat_adhd_c$priormed) # probability of priormed, used to calculate mean under optimal decision rules
@@ -481,7 +478,7 @@ detach(dat_adhd_c)
 
 ## qlaci results
 
-The the coefficients estimated by `qlaci()` combined with the user specified contrast matrix give us the estimated means for first-stage treatment options by levels of `priormed,` accounting for the optimal second-stage tactic for non-responders. With valid confidence intervals we can test contrasts and even compare to the 4 embedded adaptive interventions found in Virtual Module 2!
+With valid confidence intervals we can test contrasts and even compare to the 4 embedded adaptive interventions found in Virtual Module 2!
 
 ```{r}
 #| tbl-cap: "Estimated optimal AI tailoring first-stage on priormed and second-stage on response status and adherence"
