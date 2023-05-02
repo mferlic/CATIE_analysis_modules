@@ -1,0 +1,52 @@
+---
+title: "ADHD dataset variable descriptions"
+subtitle: "CATIE 2023, D3C"
+format:
+  html: default
+  pdf: default
+format-links: [pdf]
+editor: visual
+bibliography: references.bib
+embed-resources: true
+nocite: | 
+  @nahum-shani2012
+---
+
+dim: 150 x 13
+
+### Baseline variables
+
+| Variable name | Variable type and notation | Description                                                                                                                                                             |
+|---------------|--------------|------------------------------------|
+| `ID`          | numeric                    | Subject identifier                                                                                                                                                      |
+| `odd`         | binary; $X_1$              | Oppositional Defiant Disorder diagnosis, reflecting whether the child was (coded as 1) or was not (coded as 0) diagnosed with ODD before the first-stage intervention.  |
+| `severity`    | continuous: $X_2$          | ADHD score, reflecting ADHD symptoms at the end of the previous school year (larger values reflect greater symptoms). Range 0-10.                                       |
+| `priormed`    | binary; $X_3$              | Medication prior to first-stage intervention, reflecting whether the child did (coded as 1) or did not (coded as 0) receive medication during the previous school year. |
+| `race`        | binary; $X_4$              | White (coded 1) versus non-white (coded 0).                                                                                                                             |
+
+### Intermediate variables
+
+| Variable Name | Variable type and notation | Description                                                                                                                                            |
+|---------------|--------------|--------------------------------------------|
+| `R`           | binary; $S_{11}$           | Response status. R = 0 if child was classified as non-responder to first stage intervention, R= 1 if they were classified as a responder.              |
+| `NRtime`      | numeric; $S_{12}$          | Month at which child was classified as non-responder. Range 2-8. Undefined for responders.                                                             |
+| `adherence`   | binary; $S_{13}$           | Adherence to the stage 1 intervention. Reflecting whether the child did (coded as 1) or did not (coded as 0) show high adherence to initial treatment. |
+
+### Treatments
+
+We use effect coding (average to zero) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
+
+| Variable Name | Variable type and notation | Description                                                                                                                                                                                           |
+|---------------|--------------|--------------------------------------------|
+| `A1`          | binary                     | Stage 1 treatment assignment. Randomized with probability $0.5$ to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD, $A1=1$).                                                               |
+| `A2`          | binary                     | stage 2 treatment assignment for non-responders. Non-responders we randomized with probability $0.5$ to receive Augmented (AUG, $A2=-1$) or Intensified (INT, $A2=1$) care. Undefined for responders. |
+
+### Outcomes
+
+| Variable Name | Variable type and notation | Description                                                             |
+|---------------|--------------|--------------------------------------------|
+| `Y0`          | continuous                 | Baseline school performance (higher values reflect better performance). |
+| `Y1`          | continuous                 | Mid-year school performance                                             |
+| `Y2`          | continuous                 | End-of-year school performance (primary outcome)                        |
+
+### Reference

@@ -10,10 +10,14 @@ author:
     orcid: 0000-0003-0762-5495
   - name: Daniel Almirall
     orcid: 0000-0002-9697-6600
+
+title-block-banner: "#FFFFFF" 
+title-block-banner-color: "#000000"
 format: 
   html:
     page-layout: full
     df-print: kable
+    smooth-scroll: true
     code-overflow: scroll
     code-line-numbers: true
     code-block-bg: true
@@ -23,6 +27,8 @@ format:
     number-sections: true
     number-depth: 2
     embed-resources: true
+    css: my_style.css
+
 editor: visual
 editor_options: 
   chunk_output_type: inline
@@ -36,15 +42,21 @@ options(digits = 3)
 
 # Learning Goals
 
-Learn how moderators of first and second-stage treatment effects can be used to construct optimal adaptive interventions
+Typical secondary aims analysis involves using data from a SMART to learn a set of decision rules for a more deeply-tailored adaptive intervention that leads to better outcomes. In this workbook, we will use a subset of candidate moderators to test which variables are useful for tailoring first and second-stage intervention options in a 2-stage SMART.
 
--   Fit moderated regression models
+To learn an optimal decision rule in a 2-arm RCT we could simply fit a moderated regression to determine if baseline covariates are useful for tailoring treatment assignment. In a prototypical SMART we have two stages of treatment assignment and you may be thinking, can't we just fit moderated regressions for first and second-stage, and taken together, we have a proposal for a more deeply-tailored AI? The answer is no! These separate regressions don't "talk" to each other. That is, we want to make the optimal first-stage decision accounting for the fact that, in the future, we will be making an optimal second-stage decision.
 
--   Test contrasts and generate interaction plots
+In this workbook we will:
 
-Learn how Q-learning estimates the effect of a more-deeply tailored AI
+1.  Learn how moderators of first and second-stage treatment effects can be used to construct optimal adaptive interventions
+    -   Fit moderated regression models
+    -   Test contrasts and generate interaction plots
 
--   Implement using the R Package `qlaci`
+```{=html}
+<!-- -->
+```
+2.  Learn how Q-learning is used to estimate the effect of a more-deeply tailored AI.
+    -   Implement using the R Package `qlaci`
 
 # Setup
 
@@ -63,7 +75,7 @@ library(qlaci)
 
 # Load data
 
-This is data that was *simulated* to mimic data arising from the ADHD SMART study (PI: William Pelham). An accompanying handout ("ADHD Handout.pdf") describes the variables in the data set.
+This is data that was *simulated* to mimic data arising from the ADHD SMART study (PI: William Pelham). An accompanying handout ("ADHD_SMART_handout.pdf") describes the variables in the data set.
 
 ```{r}
 # Load data
@@ -99,7 +111,7 @@ dat_adhd <- read.csv("data/adhd-simulated-2023.csv")
 
 **Treatments:**
 
-We use effect coding (sum to zero) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions. WHY DO WE EFFECT CODE?
+We use effect coding (average to zero) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
 
 -   `A1` stage 1 treatment assignment. Randomized with probability $0.5$ to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD, $A1=1$).
 
@@ -133,13 +145,23 @@ dat_adhd_c <- dat_adhd %>% mutate(odd_c = odd - mean(odd),
 
 ------------------------------------------------------------------------
 
-# Moderators of stage 2 treatment
+# Q-learning
+
+We use Q-learning to learn a set of decision rules for a more deeply-tailored adaptive intervention which combines optimal tactics at each stage.
+
+Q-learning has three steps:
+
+1.  Fit a stage 2 moderated regression
+2.  Predict the stage 2 outcome under the optimal decision rule: $\hat{Y}^{opt}_i$
+3.  Fit a stage 1 moderated regression on $\hat{Y}^{opt}_i$
+
+## Step 1: moderators of stage 2 treatment
 
 A common secondary aim is to learn whether we can use baseline or intermediate covariates to select an optimal second-stage tactic for **non-responders.** For example, whether covariates such as the initial treatment $A_1$ and adherence to initial treatment `adherence` moderate the effect of $A2$.
 
 > We hypothesize that for children who are non-adherent to first-stage treatment it will be better to AUGment ($A2=-1$) with the alternative treatment as opposed to INTensifying ($A2=1$) the current treatment.
 
-## Regression model
+### Regression model
 
 We test this secondary aim by fitting a **moderated regression model** using data from non-responders. This model examines whether binary intermediate outcome variable `adherence`, and first-stage treatment $A_1$, moderate the effect of second-stage treatment $A_2$ on end-of-year outcome $Y_2$, controlling for other baseline covariates $\mathbf{X}$. The model is as follows:
 
@@ -180,17 +202,17 @@ Only the second-stage coefficients $\beta$ from the moderated regression in @eq-
 \
 The regression model from @eq-mod2 gives us the effect of $A2$ among non-responders. Looking at the output we find that `adherence` is a significant moderator of stage 2 treatment, but $A_1$ is not.
 
-## Knowledge check #1
+### Knowledge check #1
 
 ::: callout-note
-### Questions
+#### Questions
 
 1.  Why do we subset to non-responders when fitting a second-stage moderated regression?
 
 2.  What does this regression tell us about the use of $A1$ as a tailoring variable?
 :::
 
-## Marginal means of stage 2
+### Marginal means of stage 2
 
 We will use a very powerful package called `emmeans` to estimate the marginal mean of end-of-year school performance under different treatment/covariate options. We could do this by writing custom contrasts of the model coefficients, but `emmeans` does this for us.
 
@@ -198,7 +220,7 @@ We will use a very powerful package called `emmeans` to estimate the marginal me
 Marginal means refers to estimating the expected value while holding some covariates constant and averaging over the rest.
 :::
 
-We use the fitted moderated regression model given in @eq-mod2 to estimate the average effect of second-stage treatments conditional on levels of adherence.
+We use the fitted moderated regression model given in @eq-mod2 to estimate the average effect of second-stage treatment, among non-responders, conditional on levels of adherence.
 
 ```{r}
 # The formula notation denotes the mean outcome under all combination of the factors A1, A2, given levels of adherence.
@@ -209,9 +231,9 @@ em2 <- emmeans::emmeans(mod2, ~ A1 + A2 | adherence, weights = "proportional")
 print(em2)
 ```
 
-The results from the moderated regression and the estimate marginal means suggest that for those children who are non-adherent (`adherence` = 0) it is better to Augment ($A2 = -1$) rather than intensify. Likewise, for those children that are adherent (`adherence` = 1) it is better to Intensify ($A2=1$). Notice, our optimal tactic does not depend on first-stage treatment $A1$.
+The results from the moderated regression and the marginal means output suggest that for those children who are non-adherent (`adherence` = 0) it is better to Augment ($A2 = -1$) rather than intensify. Likewise, for those children that are adherent (`adherence` = 1) it is better to Intensify ($A2=1$). Notice, our optimal tactic does not depend on first-stage treatment $A1$.
 
-## Interaction plot of stage 2
+### Interaction plot of stage 2
 
 We can also use the `emmeans` package to visualize the estimated mean outcome for non-responders under each tactic.
 
@@ -239,10 +261,10 @@ ep2$data %>% mutate(across(1:3, as.factor)) %>%
   theme_classic()
 ```
 
-## Knowledge check #2
+### Knowledge check #2
 
 ::: callout-note
-### Questions
+#### Questions
 
 1.  What is the optimal tactic for non-adhering, non-responders to BMOD(1)? To MED(-1)?
 
@@ -251,19 +273,7 @@ ep2$data %>% mutate(across(1:3, as.factor)) %>%
 
 ------------------------------------------------------------------------
 
-# Q-learning
-
-We just found that `adherence` is useful for tailoring the second-stage tactic. We would like to do something similar and learn first-stage tailoring variables. Can't we just fit a moderated regression for first-stage, and taken together, we have a proposal for a more deeply-tailored AI? The answer is no! These separate regressions don't "talk" to each other. That is, we want to make the optimal first-stage decision accounting for the fact that in the future we will be making an optimal second-stage decision.
-
-To estimate the effect of a more deeply-tailored adaptive intervention combining the optimal tactics at each stage we use Q-learning.
-
-Q-learning has three steps:
-
-1.  Fit stage 2 moderator regression (`mod2`!) ✅
-2.  Predict the stage 2 outcome under the optimal decision rule: $\hat{Y}^{opt}_i$
-3.  Fit a stage 1 moderated regression on $\hat{Y}^{opt}_i$
-
-## Predict optimal outcome
+## Step 2: predict optimal outcome
 
 The optimal second-stage tactic learned from the moderated regression:
 
@@ -277,15 +287,15 @@ $$
 Create new data.frame with optimal $A2_i$ for every non-responding child
 
 ```{r}
-# Assign optimal second-stage tactic
+# Assign optimal second-stage tactic using learned decision rule
 dat_adhd_nr_opt2 <- dat_adhd_nr %>% 
-  mutate(A2 = if_else(adherence == 1, 1, -1)) # learned decision rule
+  mutate(A2 = if_else(adherence == 1, 1, -1)) 
 ```
 
-Predicted outcome under optimal treatment assignment
+Predicted outcome for non-responders under the optimal treatment assignment
 
 ```{r}
-dat_adhd_nr_opt2$Y2_opt <- predict(mod2, newdata = dat_adhd_nr_opt2) # using the stage 2 moderated regression mode
+dat_adhd_nr_opt2$Y2_opt <- predict(mod2, newdata = dat_adhd_nr_opt2) # using the stage 2 moderated regression model
 ```
 
 Merge non-responders with the observed outcome from responders
@@ -301,13 +311,13 @@ dat_adhd_opt2 <- bind_rows(dat_adhd_nr_opt2, dat_adhd_r)
 
 We now have a data frame with the estimated optimal outcome for non-responders tailored by `adherence.`
 
-## First-stage tailoring controlling for optimal second-stage
+## Step 3: first-stage tailoring controlling for optimal second-stage
 
-In Virtual Module 2, we showed that starting an adaptive intervention with BMOD ($A1 = -1$) is better, on average, than MED ($A1 = -1$) on end-of-year school performance. A common secondary aim is whether we can use baseline information to learn an optimal first-stage tactic to build a more deeply-tailored AI.
+A common secondary aim is whether we can now use baseline information to learn an optimal first-stage tactic to build a more deeply-tailored AI.
 
 > We hypothesize that children already on medication (`priormed` = 1) will be better-off, on average, starting with MED ($A1 = -1$) instead of BMOD ($A1 = 1$) due to parent/child habituation with taking medication.
 
-## Regression model
+### Regression model
 
 We fit a moderated regression model for first-stage treatment using the `dat_adhd_opt2` data frame, which accounts for the optimal future second-stage tactic. The tailoring variable of interest is `priormed`.
 
@@ -329,21 +339,17 @@ summary(Qmod1)
 ```
 
 ::: callout-warning
-The standard errors here are incorrect due to estimating $\hat{Y}^{opt}$. We need special software (see `qlaci`) to do proper inference.
+The standard errors here are potentially incorrect because they don't take into account sampling error in estimation of $Y^{opt}$. Luckily, we provide software (see `qlaci`) to do proper inference!
 :::
 
-We use `emmeans` pacakge to estimate the expected end-of-year school performance for an adaptive intervention that offers BMOD(1) or MED(-1) at first-stage for levels of `priormed`, adjusting for the fact we are optimally tailoring second-stage treatment for non-responders on `adherence`.
+We use `emmeans` package to estimate the expected end-of-year school performance for an adaptive intervention that offers BMOD(1) or MED(-1) at first-stage for levels of `priormed`, adjusting for the fact we are optimally tailoring second-stage treatment for non-responders by `adherence`.
 
 ```{r}
 qem1 <- emmeans::emmeans(Qmod1, ~ A1 | priormed, weights = "proportional")
-summary(qem1, infer = FALSE)
+summary(qem1, infer = FALSE)[, 1:3]
 ```
 
-::: callout-warning
-The standard errors here are incorrect due to estimating $\hat{Y}^{opt}$. We need special software (see `qlaci`) to do proper inference.
-:::
-
-## Interaction plot of optimal tactic
+### Interaction plot of optimal tactic
 
 ```{r}
 # Interaction plot of A1 with priormed
@@ -369,11 +375,13 @@ qep1$data %>% mutate(across(1:2, as.factor)) %>%
   scale_y_continuous(n.breaks = 8)
 ```
 
-## Estimated mean under the more deeply-tailored AI
+### Estimated mean under the more deeply-tailored AI
 
-![The more deeply-tailored adaptive intervention estimated using Q-learning](assets/more_deeply_tailored_AI.png){fig-align="center" width="800"}
+The results of Q-learning generated a proposal for a more deeply-tailored AI that tailors first-stage on `priormed` and second-stage on response status and `adherence`:
 
-Here we create a new data frame with the optimal first-stage tactic by levels of `priormed`. We use the parametric g-formula and the fitted model from @eq-Qmod1 to compute the mean outcome of the more deeply-tailored adaptive intervention.
+![The more deeply-tailored adaptive intervention learned using Q-learning](assets/more_deeply_tailored_AI.png){fig-align="center" width="800"}
+
+To estimate the mean outcome under the proposed decision rules we essentially repeat step 2 and create a new data frame with the optimal first-stage tactic by levels of `priormed`. We use the parametric g-formula and the fitted model from @eq-Qmod1 to compute the mean outcome if every child had received the more deeply-tailored adaptive intervention.
 
 $$
 A1 = \begin{cases} 
@@ -390,13 +398,13 @@ dat_adhd_opt1 <- dat_adhd_opt2 %>%
 # Predict outcome under optimal treatment a2
 dat_adhd_opt1$Y2_opt <- predict(Qmod1, newdata = dat_adhd_opt1)
 
-cat("Estimated school performance for optimal AI:", mean(dat_adhd_opt1$Y2_opt))
+cat("Estimated school performance under optimal AI:", mean(dat_adhd_opt1$Y2_opt))
 ```
 
-## Knowledge check #3
+### Knowledge check #3
 
 ::: callout-note
-### Questions
+#### Questions
 
 1.  Why do we need to use Q-learning to estimate a more deeply-tailored AI? What is wrong with simply running two moderator regressions?
 
@@ -407,20 +415,20 @@ cat("Estimated school performance for optimal AI:", mean(dat_adhd_opt1$Y2_opt))
 
 ------------------------------------------------------------------------
 
-The steps we just covered illustrate the basics of Q-learning, but we only get point estimates, not standard errors. For that we need some advanced software.
+The steps we just covered illustrate the basics of Q-learning, but we only get point estimates, not standard errors. For that we need some extra software... enter `qlaci()`!
 
 # The `qlaci` package
 
-The `qlaci` package performs Q-learning on data arising from a two-stage SMART. It is useful for when we want standard errors for the estimates of our more deeply-tailored adaptive intervention.
+The `qlaci` package performs Q-learning on data arising from a two-stage SMART. It is useful when we need standard errors for the estimates of our more deeply-tailored adaptive intervention.
 
 ::: callout-note
 The qlaci package can be downloaded from the d3c github: [d3center-isr/qlaci](https://github.com/d3center-isr/qlaci)
 :::
 
-First, we specify the contrast matrix that will be used for the stage-1 regression (step 3 of Q-learning). `qlaci()` uses this matrix to estimate the mean outcomes under each of the first-stage treatments (averaging over the future optimal response) at both levels of `priormed`. We also specify a contrast that estimates the mean outcome if everyone in the study had received the optimal more deeply-tailored AI.
+First, we specify the contrast matrix that will be used for the stage 1 regression (step 3 of Q-learning). `qlaci()` uses this matrix to estimate the mean outcomes under each of the first-stage treatments (accounting for the future optimal decision) at both levels of `priormed`. We also specify a contrast that estimates the mean outcome if everyone in the study had received the optimal more deeply-tailored AI.
 
 ```{r}
-pPM <- mean(dat_adhd_c$priormed) # probability of priormed
+prob.pm <- mean(dat_adhd_c$priormed) # probability of priormed, used to calculate mean under optimal decision rules
 
 ## contrast matrix - we must transpose this for qlaci
 c1 <-
@@ -431,11 +439,9 @@ c1 <-
     "Mean Y under bmod, no prior med"       = c(1, rep(0, 3), 0,  1,  0),
     "Mean Y under med, no prior med"        = c(1, rep(0, 3), 0,  -1, 0),
     "Mean diff (bmod-med) for no prior med" = c(0, rep(0, 3), 0,  2,  0),
-    "Mean Y Optimal AI"                    = c(1, rep(0, 3), pPM, 1 - 2 * pPM, -pPM)
+    "Mean Y Optimal AI"                    = c(1, rep(0, 3), prob.pm, 1 - 2 * prob.pm, -prob.pm)
     )
 ```
-
-NOTE: CAN WE ESTIMATE THE MORE DEEPLY TAILORED AI THIS WAY? are the CI valid or do we need to account for the uncertainty in pPM?? Bootstrap? Delta-method?
 
 ::: {.callout-note collapse="true" appearance="simple" icon="false"}
 ## qlaci() parameters
@@ -454,7 +460,10 @@ The following are the arguments we need to provide to `qlaci()`:
 -   `c1`: Contrast matrix for first-stage regression (see above)
 :::
 
+The function `qlaci()` maximizes the expected outcome for each stage of treatment given a set of moderators.
+
 ```{r}
+#| cache: true
 attach(dat_adhd_c) # with attach we can be lazy and refer to variables in the data.frame by name directly
 
 q1 <-  qlaci::qlaci(H10 = cbind(1, odd_c, severity_c, race_c, priormed),
@@ -473,18 +482,20 @@ detach(dat_adhd_c)
 
 ## qlaci results
 
-The the coefficients estimated by `qlaci()` combined with the user specified contrast matrix give us the estimated means for first-stage treatment options by levels of `priormed,` accounting for the optimal second-stage tactic for non-responders. With valid confidence intervals we can test contrasts and even compare the the 4 embedded adaptive interventions.
+The the coefficients estimated by `qlaci()` combined with the user specified contrast matrix give us the estimated means for first-stage treatment options by levels of `priormed,` accounting for the optimal second-stage tactic for non-responders. With valid confidence intervals we can test contrasts and even compare to the 4 embedded adaptive interventions found in Virtual Module 2!
 
 ```{r}
 #| tbl-cap: "Estimated optimal AI tailoring first-stage on priormed and second-stage on response status and adherence"
 data.frame(q1$ci1)
 ```
 
-## Knowledge check #4
+\*Optimal AI SE not accounting for variability in estimating $Pr(priormed = 1)$
+
+### Knowledge check #4
 
 ::: callout-note
-### Questions
+#### Questions
 
 1.  Looking at the above table, what do the two contrasts (bmod - med) for levels of prior med tell us about tailoring?
-2.  
+2.  ?
 :::

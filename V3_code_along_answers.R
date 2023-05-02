@@ -28,23 +28,25 @@ dat_adhd <- read.csv("data/adhd-simulated-2023.csv")
 # ODD diagnosis before the first-stage intervention (yes; odd = 1)
 prop.table(table(dat_adhd$odd))
 
-# Fit moderated regression for ODD --------------------------------------------------
-# AVERAGING OVER FUTURE??
+# Fit second-stage moderated regression for ODD --------------------------------------------------
 
-fit <- geeglm(Y2 ~ severity + priormed + race + odd + A1 + A1:odd,
-              data = dat_adhd,
+# Subset to non-responders
+dat_adhd_nr <- subset(dat_adhd, R == 0)
+
+# Fit GEE interacting ODD with A2
+fit <- geeglm(Y2 ~ severity + priormed + adherence + race + odd + A1 + A2*odd,
+              data = dat_adhd_nr,
               id = ID)
 
 summary(fit)
 
-
 # Test if ODD is a useful tailoring variable --------------------------------
-
 # Use functions from the emmeans package
-em <- emmeans(fit, ~ A1 | odd, weights = "proportional")
+em <- emmeans(fit, ~ A2 | odd, weights = "proportional")
 summary(em)
 
 contrast(em, method = "revpairwise")
 
-emmip(em, A1 ~ odd, style = "factor")
+emmip(em, A2 ~ odd, style = "factor")
 
+# still better to AUG(-1)
