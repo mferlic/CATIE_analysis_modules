@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Defines a rough equivalent to proc genmod's estimate statement.
-#
+#' Uses robust standard errors.
 #'
 #' @param fit model object of class geepack or geem
 #' @param combos vector of linear combinations of parameter estimates.
@@ -21,9 +21,7 @@ estimate <- function(fit, combos) {
   if (is(fit, "geem")){
     var <- as.matrix(fit$var)
   } else if (is(fit, "geeglm")) {
-    if(with(fit$geese, all(weights == 1) & max(clusz) == 1)) {
-      var <- fit$geese$vbeta.naiv
-    } else {var <- fit$geese$vbeta}
+    var <- fit$geese$vbeta # always use robust standard errors
   } else {
     stop("fit is not of class geeM or geeglm")
   }
