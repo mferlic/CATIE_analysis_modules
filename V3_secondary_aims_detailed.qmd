@@ -11,7 +11,7 @@ author:
   - name: Daniel Almirall
     orcid: 0000-0002-9697-6600
 
-title-block-banner: "#FFFFFF" 
+title-block-banner: "#dafffe" 
 title-block-banner-color: "#000000"
 format: 
   html:
@@ -24,8 +24,11 @@ format:
     toc: true
     toc-location: left
     toc-depth: 3
+    toc-title: "Outline"
+    toc-expand: true
     number-sections: true
     number-depth: 2
+    cap-location: top
     embed-resources: true
     css: my_style.css
 
@@ -38,6 +41,7 @@ editor_options:
 knitr::opts_chunk$set(tidy = TRUE, fig.pos = 'H', warning = FALSE, message = FALSE, digits = 2)
 
 options(digits = 3)
+
 ```
 
 # Learning Goals
@@ -49,12 +53,12 @@ To learn an optimal decision rule in a 2-arm RCT we could simply fit a moderated
 In this workbook we will:
 
 1.  Learn how moderators of first and second-stage treatment effects can be used to construct optimal adaptive interventions
+
     -   Fit moderated regression models
     -   Test contrasts and generate interaction plots
 
-<!-- -->
-
 2.  Learn how Q-learning is used to estimate the effect of a more-deeply tailored AI.
+
     -   Implement using the R Package `qlaci`
 
 # Setup
@@ -65,11 +69,16 @@ Load required packages
 #| results: hide
 #| warning: false
 
+# R packages for analysis
 library(geepack)
-library(ggplot2)
-library(dplyr)
 library(emmeans)
 library(qlaci)
+
+# R packages for visuals/data 
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+
 ```
 
 # Load data
@@ -81,9 +90,9 @@ This is data that was *simulated* to mimic data arising from the ADHD SMART stud
 dat_adhd <- read.csv("data/adhd-simulated-2023.csv")
 ```
 
-![ADHD study prototypical SMART](assets/adhd_smart.png){alt="ADHD study prototypical SMART" fig-align="center"}
+![ADHD study SMART](assets/adhd_smart_design_with_probs.png){.sidebar.toc-left alt="ADHD study prototypical SMART" fig-align="center"}
 
-## Examine data
+## Examine data {.unnumbered .unlisted}
 
 ::: {.callout-tip collapse="true" appearance="simple" icon="false"}
 ## ADHD dataset variable descriptions
@@ -110,7 +119,7 @@ dat_adhd <- read.csv("data/adhd-simulated-2023.csv")
 
 **Treatments:**
 
-We use effect coding (average to zero) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
+We use effect coding (contrast coding) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
 
 -   `A1` stage 1 treatment assignment. Randomized with probability $0.5$ to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD, $A1=1$).
 
@@ -127,10 +136,13 @@ We use effect coding (average to zero) to denote the two levels of treatment ass
 
 ```{r}
 #| tbl-cap: "ADHD SMART data"
-head(dat_adhd, n = 10)
+#| echo: false
+dat_adhd %>% kable() %>%
+  kable_styling() %>%
+  scroll_box(height = "400px")
 ```
 
-## Clean/transform data
+## Clean/transform data {.unnumbered .unlisted}
 
 Here we grand mean center the baseline covariates. This does not change the point estimates, but is useful when interpreting model coefficients or when hand coding contrasts.
 
@@ -154,7 +166,7 @@ Q-learning has three steps:
 2.  Predict the stage 2 outcome under the optimal decision rule: $\hat{Y}^{opt}_i$
 3.  Fit a stage 1 moderated regression on $\hat{Y}^{opt}_i$
 
-## Step 1: moderators of stage 2 treatment
+## Step 1: second-stage tailoring
 
 A common secondary aim is to learn whether we can use baseline or intermediate covariates to select an optimal second-stage tactic for **non-responders.** For example, whether covariates such as the initial treatment $A_1$ and adherence to initial treatment `adherence` moderate the effect of $A2$.
 
@@ -166,8 +178,8 @@ We test this secondary aim by fitting a **moderated regression model** using dat
 
 $$
 \begin{gather*} 
-E[Y \mid \mathbf{X}, A_1, \text{adherence}, A_2, R = 0] = \eta_0 + \eta^T\mathbf{X} + \eta_1 A_{1} + \eta_2\text{adherence} + \beta_1 A_2 + \\ 
-\beta_2 (A_2 \times A_1) + \beta_{3} (A_2 \times \text{adherence})
+E[Y(A_2) \mid \mathbf{X}, A_1, \text{adherence}, R = 0] = \beta_0 + \beta_{1:4}^T\mathbf{X} + \beta_5 A_{1} + \beta_6\text{adherence} + \beta_7 A_2 + \\ 
+\beta_8 (A_2 \times A_1) + \beta_9 (A_2 \times \text{adherence})
 \end{gather*}
 $$ {#eq-mod2}
 
@@ -187,7 +199,7 @@ Next, fit a moderated regression to the subset of non-responders. Interact $A_2$
 
 ```{r}
 # geeglm fits a Generalize Estimating Equation. Similar to lm(), but gives us robust standard errors.
-mod2 <- geepack::geeglm(Y2 ~ odd + severity + priormed + race + adherence + A1 + A2 + A1:A2 + adherence:A2, 
+mod2 <- geepack::geeglm(Y2 ~ odd + severity + priormed + race + A1 + adherence + A2 + A1:A2 + adherence:A2, 
                         id = ID, # a subject identifier is required for geeglm()
                         data = dat_adhd_nr)
 
@@ -195,7 +207,7 @@ summary(mod2)
 ```
 
 ::: callout-warning
-Only the second-stage coefficients $\beta$ from the moderated regression in @eq-mod2 are causal. The first-stage coefficients $\eta$ are biased as a result of sub-setting to non-responders.
+Only the second-stage coefficients $\beta_7, \beta_8, \beta_9$ from the moderated regression in @eq-mod2 are causal. The pre second-stage randomization covariates are all associations with the outcome.
 :::
 
 \
@@ -310,7 +322,7 @@ dat_adhd_opt2 <- bind_rows(dat_adhd_nr_opt2, dat_adhd_r)
 
 We now have a data frame with the estimated optimal outcome for non-responders tailored by `adherence.`
 
-## Step 3: first-stage tailoring controlling for optimal second-stage
+## Step 3: first-stage tailoring
 
 A common secondary aim is whether we can now use baseline information to learn an optimal first-stage tactic to build a more deeply-tailored AI.
 
@@ -322,15 +334,15 @@ We fit a moderated regression model for first-stage treatment using the `dat_adh
 
 $$
 \begin{gather}
-E[\hat{Y}^{opt} \mid \mathbf{X}, \text{priormed}, A_1] = \eta_0 + 
-\eta^TX + \beta_1\text{priormed} + 
-\beta_2A_1 + \beta_3(A_1 \times \text{priormed})
+E[Y^{opt}(A_1) \mid \mathbf{X}, \text{priormed}] = \beta_0 + 
+\beta_{1:3}^TX + \beta_5\text{priormed} + 
+\beta_6A_1 + \beta_7(A_1 \times \text{priormed})
 \end{gather}
 $$ {#eq-Qmod1}
 
 ```{r}
 # Moderator regression for first stage tailoring on priormed, controlling for optimal future tactic
-Qmod1 <- geepack::geeglm(Y2_opt ~ odd + severity + race + A1*priormed,
+Qmod1 <- geepack::geeglm(Y2_opt ~ odd + severity + race + priormed + A1 + A1:priormed,
                          id = ID,
                          data = dat_adhd_opt2)
 
@@ -338,7 +350,7 @@ summary(Qmod1)
 ```
 
 ::: callout-warning
-The standard errors here are potentially incorrect because they don't take into account sampling error in estimation of $Y^{opt}$. Luckily, we provide software (see `qlaci`) to do proper inference!
+The standard errors here are potentially incorrect because they don't take into account sampling error in estimation of $\hat{Y}^{opt}$. Luckily, we provide software (see `qlaci`) to do proper inference!
 :::
 
 We use `emmeans` package to estimate the expected end-of-year school performance for an adaptive intervention that offers BMOD(1) or MED(-1) at first-stage for levels of `priormed`, adjusting for the fact we are optimally tailoring second-stage treatment for non-responders by `adherence`.
