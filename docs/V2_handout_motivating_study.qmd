@@ -1,0 +1,35 @@
+---
+title: "Module V2: Primary Aims Analyses in a Prototypical SMART"
+subtitle: "Handout: A schematic of the ADHD SMART"
+title-block-banner: "#FFFFFF" 
+title-block-banner-color: "#000000"
+format: pdf
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(tidy = TRUE, fig.pos = 'H', warning = FALSE, message = FALSE, digits = 2)
+
+options(digits = 3)
+```
+
+# The Motivating Study
+
+Our motivating study is the ADHD SMART (PI: Pelham), an example of a prototypical SMART.
+
+![](assets/adhd_smart_design_with_probs.png){width="6in," height="4.5in"}
+
+# Scope of Follow-Along and Code-Along Sessions in this Module
+
+The workflow and code we will be using in the Follow-Along and Code-Along sessions in this module will be specifically applicable to one of the most common types prototypical SMARTs. These are prototypical SMARTs where:
+
+-   the probability of being assigned one of two first-stage intervention options is 0.5 (i.e., $P_1=0.5$)
+-   among non-responders, the probability of being assigned to one of two second-stage intervention options is 0.5 (i.e., $P_2=0.5$)
+
+Extending the workflow and code to accommodate prototypical SMARTs where either $P_1 \neq 0.5$ or $P_2 \neq 0.5$ is easy once you understand the fundamentals.
+
+# Reference
+
+Pelham Jr, W. E., Fabiano, G. A., Waxmonsky, J. G., Greiner, A. R., Gnagy, E. M., Pelham III, W. E., ..., & Murphy, S. A. (2016). Treatment sequencing for childhood ADHD: A multiple-randomization study of adaptive medication and behavioral interventions. Journal of Clinical Child & Adolescent Psychology, 45(4), 396-415.

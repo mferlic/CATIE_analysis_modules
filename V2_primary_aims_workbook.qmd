@@ -1,0 +1,758 @@
+---
+title: "V2: Primary Aims Analyses in a Prototypical SMART"
+subtitle: "Workflow and Code for Three Types of Primary Aims"
+author: 
+  - name: Jamie Yap
+    orcid: 0000-0002-0899-7146
+  - name: Mason Ferlic
+    orcid: 0000-0003-4170-2722
+  - name: John J. Dziak
+    orcid: 0000-0003-0762-5495
+  - name: Daniel Almirall
+    orcid: 0000-0002-9697-6600
+
+title-block-banner: "#dafffe" 
+title-block-banner-color: "#000000"
+format: 
+  html:
+    page-layout: full
+    df-print: kable
+    smooth-scroll: true
+    code-overflow: scroll
+    code-line-numbers: true
+    code-block-bg: true
+    toc: true
+    toc-location: left
+    toc-depth: 3
+    number-sections: true
+    toc-title: "Outline"
+    toc-expand: true
+    number-depth: 2
+    embed-resources: true
+    css: my_style.css
+    grid:
+      margin-width: 250px
+      body-width: 800px
+
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(tidy = TRUE, fig.pos = 'H', warning = FALSE, message = FALSE, digits = 2)
+
+options(digits = 3)
+```
+
+# The Motivating Study
+
+Our motivating study is the ADHD SMART (PI: Pelham), an example of a prototypical SMART. A picture of this schematic is also available in the handout `V2_handout_motivating_study.pdf`.
+
+![](assets/adhd_smart_design_with_probs.png){width="6in," height="4.5in"}
+
+# Set up
+
+```{r}
+# This is a simulated dataset which mimics the 
+# most salient characteristics of the original
+# dataset
+dat_adhd <- read.csv("data/adhd-simulated-2023.csv")
+```
+
+```{r}
+# The R programming language provides basic 
+# capabilities, but much of what people do in R is 
+# based on add-on "packages", which we load into R 
+# using the `library` command
+
+# Load package for data cleaning
+library(dplyr)
+
+# Load package for plotting
+library(ggplot2)
+
+# Load package for data analysis
+library(geepack)
+
+# Sometimes, we may write our own custom functions 
+# in R (similar to macros in SAS). This line here 
+# loads a custom function for estimating contrasts and
+# mimics the ESTIMATE statement in SAS.
+source("R/estimate.R")
+```
+
+## Examine simulated data
+
+::: {.callout-tip appearance="simple" icon="false" collapse="true"}
+## ADHD simulated dataset variable descriptions
+
+**Baseline covariates:**
+
+-   `ID` subject identifier
+
+-   `odd` Oppositional Defiant Disorder diagnosis, reflecting whether the child was (coded as 1) or was not (coded as 0) diagnosed with ODD before the first-stage intervention.
+
+-   `severity` ADHD score, reflecting ADHD symptoms at the end of the previous school year (larger values reflect greater symptoms). Range 0-10.
+
+-   `priormed` medication prior to first-stage intervention, reflecting whether the child did (coded as 1) or did not (coded as 0) receive medication during the previous school year.
+
+-   `race` white (coded 1) versus non-white (coded 0).
+
+**Intermediate covariates:**
+
+-   `R` response status. R = 0 if child was classified as non-responder to first stage intervention, R = 1 if they were classified as a responder.
+
+-   `NRtime` months at which child was classified as non-responder. Range 2-8. Undefined for responders.
+
+-   `adherence` adherence to the stage 1 intervention. Reflecting whether the child did (coded as 1) or did not (coded as 0) show high adherence to initial treatment.
+
+**Treatments:**
+
+We use contrast coding (effect coding) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
+
+-   `A1` stage 1 treatment assignment. Randomized with probability $0.5$ to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD, $A1=1$).
+
+-   `A2` stage 2 treatment assignment for non-responders. Non-responders we randomized with probability $0.5$ to receive Augmented (AUG, $A2=-1$) or Intensified (INT, $A2=1$) care. `A2` is coded as `NA` for responders.
+
+**Outcomes**
+
+-   `Y0` baseline school performance (higher values reflect better performance).
+
+-   `Y1` mid-year school performance.
+
+-   `Y2` end-of-year school performance (**this variable is the primary outcome for each primary aim**)
+:::
+
+```{r}
+head(dat_adhd)
+```
+
+# Analysis code for Primary Aim Type 1
+
+## Regression model
+
+$$
+E\left[Y_2(A_1) | \mathbf{X}\right] = \beta_0 + \beta_1 A_{1} + \beta_2 X_{1c} + \beta_3 X_{2c} + \beta_4 X_{3c} + \beta_5 X_{4c}
+$$
+
+## Step-by-step workflow and R code syntax
+
+```{r}
+# Create a copy of the original dataset
+dat_smart <- dat_adhd
+```
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim1.png)
+:::
+
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own grand mean
+
+```{r}
+dat_smart <- dat_smart %>%
+  # Center each baseline covariate by its own grand mean
+  mutate(odd_c = odd - mean(odd),                 # this creates X_1c
+         severity_c = severity - mean(severity),  # this creates X_2c
+         priormed_c = priormed - mean(priormed),  # this creates X_3c
+         race_c = race - mean(race))              # this creates X_4c
+```
+
+Step 2. Estimate parameters in regression model
+
+We used Generalized Estimating Equations (GEE) to estimate the model for the mean under each first-stage intervention option; obtaining the robust standard error was simple: we only needed to ensure that `std.err = "san.se"` in the `geeglm` function.
+
+```{r}
+# geeglm is a function in the geepack package
+# analogous to PROC GENMOD in SAS
+model <- geeglm(Y2 ~ A1 + odd_c + severity_c + priormed_c + race_c, 
+                id = ID, 
+                data = dat_smart, 
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+```
+
+```{r}
+summary(model)
+```
+
+::: column-margin
+$$
+\begin{split}
+\widehat{E}\left[Y_2(A_1) | \mathbf{X}\right] &= \widehat{\beta_0} + \widehat{\beta_1} A_1 \\
+&+ \widehat{\beta_2} X_{1c} + \widehat{\beta_3} X_{2c} + \widehat{\beta_4} X_{3c} + \widehat{\beta_5} X_{4c}
+\end{split}
+$$
+:::
+
+::: column-margin
+[Correspondence between output and equation]{style="color:red;"}
+
+| Quantity            | Value   |
+|---------------------|---------|
+| $\widehat{\beta_0}$ | 2.8894  |
+| $\widehat{\beta_1}$ | 0.3758  |
+| $\widehat{\beta_2}$ | -0.6609 |
+| $\widehat{\beta_3}$ | -0.0695 |
+| $\widehat{\beta_4}$ | -0.1827 |
+| $\widehat{\beta_5}$ | 0.5632  |
+:::
+
+Step 3. Estimate key quantities of interest
+
+We typically have the mean of $Y_2$ under each first-stage intervention option and the main effect of first-stage intervention options as our key quantities of interest.
+
+```{r}
+# The step above creates three rows and six columns in L.
+L <- rbind(
+  # The 1st line can be thought of as a set of instructions
+  #  to tell the computer to calculate b0+b1
+  "Mean Y2 under A1=+1 (BMOD)"   = c(1,  1, 0, 0, 0, 0),
+  # The 2nd line can be thought of as a set of instructions
+  #  to tell the computer to calculate b0-b1
+  "Mean Y2 under A1=-1 (MED)"    = c(1, -1, 0, 0, 0, 0),
+  # The 3rd line can be thought of as a set of instructions 
+  # to tell the computer to calculate 2*b1
+  "Main effect using full sample" = c(0,  2,  0, 0, 0, 0))
+```
+
+```{r}
+# If one wishes to estimate more quantities, 
+# one may simply add a new row to L
+# before triggering the execution of the  
+# estimation step (i.e., the next code snippet).
+# This new row will have to have exactly six columns 
+# since our regression model of interest has exactly 
+# six parameters (including the intercept term).
+print(L)
+```
+
+```{r}
+# This line triggers the execution of the estimation of 
+# the key quantities of interest.
+# This step is similar to what SAS sometimes gives 
+# for ESTIMATE or LSMEANS statements.
+est_contrasts <- estimate(model, L)
+```
+
+```{r}
+print(est_contrasts)
+```
+
+::: column-margin
+[Workflow for Primary Aim Type 1 is completed.]{style="color:red;"}
+:::
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim1.png)
+:::
+
+This output says that:
+
+-   The estimated mean of $Y_2$ under $A_1=+1$ (BMOD) is `3.2653`
+-   The estimated mean of $Y_2$ under $A_1=-1$ (MED) is `2.5136`
+-   The estimated main effect of first-stage intervention options is `0.7517`
+
+# Analysis code for Primary Aim Type 2
+
+## Regression model
+
+$$
+E\left[Y_2(A_2) | \mathbf{X}, R = 0\right] = \beta_0 + \beta_1 A_{2} + \beta_2 X_{1cNR} + \beta_3 X_{2cNR} + \beta_4 X_{3cNR} + \beta_5 X_{4cNR}
+$$
+
+## Step-by-step workflow and R code syntax
+
+```{r}
+# Create a copy of the original dataset
+dat_smart <- dat_adhd
+```
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim2.png)
+:::
+
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own mean ***among non-responders***
+
+```{r}
+dat_smart_nonresponders <- dat_smart %>%
+  # In all subsequent steps, 
+  # we only retain non-responders' observations
+  filter(R == 0) %>%   
+  # Center each baseline covariate by its own 
+  # mean conditional on response
+  mutate(odd_cNR = odd - mean(odd),                 # this creates X_1cNR
+         severity_cNR = severity - mean(severity),  # this creates X_2cNR
+         priormed_cNR = priormed - mean(priormed),  # this creates X_3cNR
+         race_cNR = race - mean(race))              # this creates X_4cNR
+```
+
+Step 2. Estimate parameters in regression model
+
+```{r}
+model <- geeglm(Y2 ~ A2 + odd_cNR + severity_cNR + priormed_cNR + race_cNR, 
+                id = ID, 
+                data = dat_smart_nonresponders, 
+                # Remember to ask the computer to give 
+                # you rubust standard errors
+                std.err = "san.se") 
+```
+
+```{r}
+summary(model)
+```
+
+::: column-margin
+$$
+\begin{split}
+\widehat{E}\left[Y_2(A_2) | \mathbf{X}\right] &= \widehat{\beta_0} + \widehat{\beta_1} A_2 \\
+&+ \widehat{\beta_2} X_{1cNR} + \widehat{\beta_3} X_{2cNR} + \widehat{\beta_4} X_{3cNR} + \widehat{\beta_5} X_{4cNR}
+\end{split}
+$$
+:::
+
+::: column-margin
+[Correspondence between output and equation]{style="color:red;"}
+
+| Quantity            | Value   |
+|---------------------|---------|
+| $\widehat{\beta_0}$ | 2.7151  |
+| $\widehat{\beta_1}$ | -0.4200 |
+| $\widehat{\beta_2}$ | -0.8406 |
+| $\widehat{\beta_3}$ | 0.0454  |
+| $\widehat{\beta_4}$ | -0.2806 |
+| $\widehat{\beta_5}$ | 0.4007  |
+:::
+
+Step 3. Estimate key quantities of interest
+
+We typically have the mean of $Y_2$ among non-responders under each second-stage intervention option and the main effect of second-stage intervention options among non-responders as our key quantities of interest.
+
+```{r}
+L <- rbind(
+  # The 1st line can be thought of as a set of instructions to tell the
+  # computer to calculate b0+b1
+  "Mean Y2 under A2=+1 (Intensify)"   = c(1,  1, 0, 0, 0, 0),
+  # The 2nd line can be thought of as a set of instructions to tell the
+  # computer to calculate b0-b1
+  "Mean Y2 under A2=-1 (Augment)"    = c(1, -1, 0, 0, 0, 0),
+  # The 3rd line can be thought of as a set of instructions to tell the
+  # computer to calculate 2*b1
+  "Main effect using non-responders" = c(0,  2,  0, 0, 0, 0))
+```
+
+```{r}
+print(L)
+```
+
+```{r}
+est_contrasts <- estimate(model, L)
+```
+
+```{r}
+print(est_contrasts)
+```
+
+::: column-margin
+[Workflow for Primary Aim Type 2 is completed.]{style="color:red;"}
+:::
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim2.png)
+:::
+
+This output says that:
+
+-   The estimated mean of $Y_2$ under $A_2=+1$ (Intensify) is `2.2952`
+-   The estimated mean of $Y_2$ under $A_2=-1$ (Augment) is `3.1351`
+-   The estimated main effect of second-stage intervention options among **non-responders** to first-stage intervention options? `-0.8399`
+
+# Analysis code for Primary Aim Type 3
+
+## Regression model
+
+$$
+E\left[Y_2(A_1, A_2) | \mathbf{X}\right] = \beta_0 + \beta_1 A_{1} + \beta_2 A_2 + \beta_3 A_1 A_2 + \beta_4 X_{1c} + \beta_5 X_{2c} + \beta_6 X_{3c} + \beta_7 X_{4c}
+$$
+
+## Step-by-step workflow and R code syntax
+
+```{r}
+# Create a copy of the original dataset
+dat_smart <- dat_adhd
+```
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/primary_comparison.png)
+:::
+
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own grand mean
+
+```{r}
+dat_smart <- dat_smart %>%
+  # Center each baseline covariate by its own grand mean
+  mutate(odd_c = odd - mean(odd),                 # this creates X_1c
+         severity_c = severity - mean(severity),  # this creates X_2c
+         priormed_c = priormed - mean(priormed),  # this creates X_3c
+         race_c = race - mean(race))              # this creates X_4c
+```
+
+Step 2. Create weights
+
+The actual numeric value of the weights (i.e., 2 and 4) can be obtained "by hand" by calculating the inverse (reciprocal) of the probability of being assigned to a particular adaptive intervention.
+
+-   For responders, $W = 1 \Bigg/\left(\frac{1}{p_1}\right) = 1 \Bigg/\left(\frac{1}{2}\right) = 2$
+-   For non-responders, $W = 1 \Bigg/\left(\frac{1}{p_1}\right) \left(\frac{1}{p_2}\right) = 1 \Bigg/ \left(\frac{1}{2}\right) \left(\frac{1}{2}\right)$ = 4
+
+```{r}
+# We need to create a new column that contains 
+# the weight that we will assign to
+# non-responders and responders in the dataset
+dat_smart <- dat_smart %>%
+  mutate(design_weights = if_else(R == 1, 
+                                  2, # when R == 1 is TRUE
+                                  4  # when R == 1 is FALSE
+                                  ))     
+```
+
+Step 3. Create new dataset with replicated rows for responders
+
+We restructure the original dataset such that instead of one observation per **responder**, the new dataset includes two copies of each **responder's** observation. **Non-responders'** observations will remain intact (preserved) in the replication step.
+
+We *first* save **non-responders**' observations into a dataset of their own.
+
+```{r}
+# Save non-responders' observations 
+# into the variable rows_not_to_replicate
+dat_rows_not_to_replicate <- dat_smart %>% filter(R==0)
+```
+
+::: column-margin
+[Restructure the dataset: STEP 1]{style="color:red;"}
+:::
+
+Recall that `A2` was coded as `NA` in the original dataset. The key in the replication step is to replace `NA` in `A2` by `+1` in the first copy and `NA` in `A2` by `-1` in the second copy.
+
+We *next* save **responders**' observations into a dataset of their own.
+
+```{r}
+# Save responders' observations into the variable rows_to_replicate
+dat_rows_to_replicate <- dat_smart %>% filter(R==1)
+```
+
+::: column-margin
+[Restructure the dataset: STEP 2]{style="color:red;"}
+:::
+
+```{r}
+# In the next two lines of code, we create two copies of rows_to_replicate.
+# For the first copy (see next line) assign a value of +1 to A2.
+dat_plus_one_pseudodata <- dat_rows_to_replicate %>% mutate(A2 = +1)
+# For the second copy (see next line) assign a value of -1 to A2.
+dat_minus_one_pseudodata <- dat_rows_to_replicate %>% mutate(A2 = -1)
+```
+
+```{r}
+# This is the new dataset where
+# each responder has 2 rows and each
+# and each non-responder has 1 row
+dat_smart_replicated <- rbind(dat_rows_not_to_replicate,
+                              dat_plus_one_pseudodata,
+                              dat_minus_one_pseudodata)
+```
+
+::: column-margin
+[Restructure the dataset: STEP 3]{style="color:red;"}
+:::
+
+```{r}
+# Inspect a couple of rows to verify that each responder has
+# two rows (which are exact copies of each other, 
+# except for the value of A2!)
+# and a weight of 2
+dat_smart_replicated %>% 
+  filter(R == 1) %>% 
+  arrange(ID) %>%
+  select(ID, odd_c, severity_c, priormed_c, race_c,
+         A1, R, A2, design_weights, Y2, cell) %>%
+  head(., n = 4)
+```
+
+::: column-margin
+[Done restructuring]{style="color:red;"}
+:::
+
+::: column-margin
+[Sanity check: Responders]{style="color:red;"}
+:::
+
+```{r}
+# Inspect a couple of rows to verify that each non-responder has
+# one row and a weight of 4
+dat_smart_replicated %>% 
+  filter(R == 0) %>% 
+  arrange(ID) %>%
+  select(ID, odd_c, severity_c, priormed_c, race_c,
+         A1, R, A2, design_weights, Y2, cell) %>%
+  head(., n = 4)
+```
+
+::: column-margin
+[Sanity check: Non-responders]{style="color:red;"}
+:::
+
+::: {.callout-caution appearance="simple"}
+Center covariates **before** weighting and replicating and not **after** weighting and replicating. In other words, if Step 1 was performed after both Steps 2 and 3, then estimates of the treatment effect will not necessarily be correct!
+:::
+
+Step 4. Estimate parameters in regression model
+
+::: column-margin
+[Reminder: regression model]{style="color:red;"} $$
+\begin{split}
+E\left[Y_2(A_1, A_2) | \mathbf{X}\right] &= \beta_0 + \beta_1 A_{1} + \beta_2 A_2 + \beta_3 A_1 A_2 \\
+&+ \beta_4 X_{1c} + \beta_5 X_{2c} + \beta_6 X_{3c} + \beta_7 X_{4c}
+\end{split}
+$$
+:::
+
+```{r}
+model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2) 
+                        + odd_c + severity_c + priormed_c + race_c,
+                # specify which column contains the participant ID's
+                id = ID,  
+                # remember to use the weighted and replicated dataset
+                data = dat_smart_replicated,  
+                # remember to weight each row appropriately
+                weights = design_weights,  
+                # ask the computer to treat replicates as independent units
+                corstr = "independence",  
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+```
+
+```{r}
+# Inspect parameter estimates
+summary(model)
+```
+
+::: column-margin
+$$
+\begin{split}
+\widehat{E}\left[Y_2(A_1, A_2) | \mathbf{X}\right] &= \widehat{\beta_0} + \widehat{\beta_1} A_{1} + \widehat{\beta_2} A_2 + \widehat{\beta_3} A_1 A_2 \\
+&+ \widehat{\beta_4} X_{1c} + \widehat{\beta_5} X_{2c} + \widehat{\beta_6} X_{3c} + \widehat{\beta_7} X_{4c}
+\end{split}
+$$
+:::
+
+::: column-margin
+[Correspondence between output and equation]{style="color:red;"}
+
+| Quantity            | Value   |
+|---------------------|---------|
+| $\widehat{\beta_0}$ | 2.9142  |
+| $\widehat{\beta_1}$ | 0.4209  |
+| $\widehat{\beta_2}$ | -0.3473 |
+| $\widehat{\beta_3}$ | -0.1070 |
+| $\widehat{\beta_4}$ | -0.6989 |
+| $\widehat{\beta_5}$ | -0.694  |
+| $\widehat{\beta_6}$ | -0.1278 |
+| $\widehat{\beta_7}$ | 0.5673  |
+:::
+
+Step 5. Obtain estimated means under each embedded AI
+
+::: column-margin
+[Reminder: regression model]{style="color:red;"} $$
+\begin{split}
+E\left[Y_2(A_1, A_2) | \mathbf{X}\right] &= \beta_0 + \beta_1 A_{1} + \beta_2 A_2 + \beta_3 A_1 A_2 \\
+&+ \beta_4 X_{1c} + \beta_5 X_{2c} + \beta_6 X_{3c} + \beta_7 X_{4c}
+\end{split}
+$$
+
+[Reminder: how variables were coded]{style="color:red;"}
+
+-   $A_1 = 1$ (BMOD), $A_1 = -1$ (MED)
+-   $A_2 = 1$ (INTENSIFY), $A_2 = -1$ (AUGMENT)
+:::
+
+::: column-margin
+[Contrast coding logic: Mean under (MED, AUGMENT)]{style="color:red;"} $$
+\begin{split}
+E\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] &= \beta_0 {\color{royalblue}{(1)}} + \beta_1 {\color{royalblue}{(-1)}} + \beta_2 {\color{royalblue}{(-1)}} + \beta_3 {\color{royalblue}{(1)}} \\
+&+ \beta_4 {\color{royalblue}{(0)}} + \beta_5 {\color{royalblue}{(0)}} + \beta_6 {\color{royalblue}{(0)}} + \beta_7 {\color{royalblue}{(0)}}
+\end{split}
+$$
+
+[Contrast coding logic: Mean under (BMOD, AUGMENT)]{style="color:red;"} $$
+\begin{split}
+E\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] &= \beta_0 {\color{royalblue}{(1)}} + \beta_1 {\color{royalblue}{(1)}} + \beta_2 {\color{royalblue}{(-1)}} + \beta_3 {\color{royalblue}{(-1)}} \\
+&+ \beta_4 {\color{royalblue}{(0)}} + \beta_5 {\color{royalblue}{(0)}} + \beta_6 {\color{royalblue}{(0)}} + \beta_7 {\color{royalblue}{(0)}}
+\end{split}
+$$
+:::
+
+::: {.column-margin style="font-size: 14px;"}
+[Correspondence between output and equation]{style="color:red;"}
+
+| Quantity                                                                                                           | Value |
+|--------------------------------------------------------------------------------------------------------------------|-------|
+| $$                                                                                                                 
+           \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                  
+            $$                                                                                                       | 2.734 |
+| $$                                                                                                                 
+            \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                  
+            $$                                                                                                       | 3.789 |
+| $$                                                                                                                 
+            \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                  
+            $$                                                                                                       | 2.253 |
+| $$                                                                                                                 
+            \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                   
+            $$                                                                                                       | 2.881 |
+:::
+
+```{r}
+# L is user-specified with
+# -- number of rows = number of AI's
+# -- number of columns = number of parameters in regression model
+L <- rbind(
+  # These statements get the contrast corresponding to
+  # the mean end-of-study outcome under each embedded AI
+  "AI#1 (MED, AUGMENT)"    = c(1, -1, -1,  1, rep(0,4)),
+  "AI#2 (BMOD, AUGMENT)"   = c(1,  1, -1, -1, rep(0,4)),
+  "AI#3 (MED, INTENSIFY)"  = c(1, -1,  1, -1, rep(0,4)),
+  "AI#4 (BMOD, INTENSIFY)" = c(1,  1,  1,  1, rep(0,4)))
+```
+
+```{r}
+# The function `estimate` has two user-specified arguments:
+# -- fit: an output of geeglm, the function we used to 
+#         estimate the parameters of our regression model
+#         of interest
+# -- combos: contrasts of interest, encoded into a matrix
+est_contrasts <- estimate(fit = model, combos = L)
+
+print(est_contrasts)
+```
+
+Step 6: Obtain estimated effect
+
+::: column-margin
+[Correspondence between output and equation]{style="color:red;"}
+
+| Quantity                                                                                                                                                                                                                                                                                                                                     | Value |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
+| $$                                                                                                                                                                                                                                                                                                                                           
+                 \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                  
+                 $$                                                                                                                                                                                                                                                                                                                            | 1.056 |
+:::
+
+Let's suppose that the **primary pairwise comparison of interest** is the **causal effect** of (BMOD, AUGMENT) versus (MED, AUGMENT).
+
+```{r}
+D <- rbind(
+  # This statement obtains the contrast corresponding to
+  # the difference in end-of-study mean between 
+  # (BMOD, AUGMENT) and (MED, AUGMENT)
+  "(BMOD, AUGMENT) vs. (MED, AUGMENT)" = c(0, 2, 0, -2, rep(0,4))
+  )
+```
+
+```{r}
+est_more_contrasts <- estimate(fit = model, combos = D)
+
+print(est_more_contrasts)
+```
+
+## Visualize 95% CI's
+
+```{r}
+#| echo: false
+#| fig-width: 5
+#| fig-height: 8
+ 
+# Convert matrix into data frame because ggplot does not permit matrix inputs
+dat_plot <- data.frame(est_contrasts)
+
+# We strongly prefer using so-called 'syntactic names' for data frames
+colnames(dat_plot) <- c("estimate", "lower", "upper", "stderr", "pval")
+dat_plot[["contrast_labels"]] <- row.names(dat_plot)
+row.names(dat_plot) <- NULL
+
+# Grab only the rows you will plot
+dat_plot <- dat_plot %>% arrange(contrast_labels)
+
+# Start building a graph using the ggplot2 package
+g <- ggplot(data = dat_plot, mapping = aes(x = contrast_labels, y = estimate))
+g <- g + scale_y_continuous(limits = c(0,5), breaks = c(0, 0.5, 1,1.5,2,2.5,3,3.5,4,4.5,5))
+g <- g + theme(axis.text.x = element_text(angle = 55, vjust = 0.9, hjust = 1, size = 14))
+g <- g + theme(axis.text = element_text(size = 14))
+g <- g + labs(x = "", y = "End-of-study means")
+g <- g + labs(title = "Point estimates and 95% CI's of end-of-study means\nunder each embedded adaptive intervention")
+
+# Draw point estimates and 95% CI's
+g <- g + geom_point(size = 8, colour = c("aquamarine3","coral","gold","slateblue2"))
+g <- g + geom_errorbar(aes(x=1, ymin = dat_plot[["lower"]][1], ymax = dat_plot[["upper"]][1]), width=.2, size = 2, colour = "aquamarine3") 
+g <- g + geom_errorbar(aes(x=2, ymin = dat_plot[["lower"]][2], ymax = dat_plot[["upper"]][2]), width=.2, size = 2, colour = "coral") 
+g <- g + geom_errorbar(aes(x=3, ymin = dat_plot[["lower"]][3], ymax = dat_plot[["upper"]][3]), width=.2, size = 2, colour = "gold") 
+g <- g + geom_errorbar(aes(x=4, ymin = dat_plot[["lower"]][4], ymax = dat_plot[["upper"]][4]), width=.2, size = 2, colour = "slateblue2") 
+
+# Reveal plot
+g
+```
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 7
+ 
+# Convert matrix into data frame because ggplot does not permit matrix inputs
+dat_plot <- data.frame(est_more_contrasts)
+
+# We strongly prefer using so-called 'syntactic names' for data frames
+colnames(dat_plot) <- c("estimate", "lower", "upper", "stderr", "pval")
+dat_plot[["contrast_labels"]] <- row.names(dat_plot)
+row.names(dat_plot) <- NULL
+
+# Grab only the rows you will plot
+dat_plot <- dat_plot %>% arrange(contrast_labels)
+
+# Start building a graph using the ggplot2 package
+g <- ggplot(data = dat_plot, mapping = aes(x = contrast_labels, y = estimate))
+g <- g + scale_x_continuous(limits = c(1.5, 2.5), breaks = NULL)
+g <- g + scale_y_continuous(limits = c(-2,2), breaks = seq(-2,2,0.5))
+g <- g + theme(axis.text.x = element_text(angle = 55, vjust = 0.9, hjust = 1))
+g <- g + theme(axis.text = element_text(size = 14))
+g <- g + labs(x = "", y = "Difference in end-of-study means")
+g <- g + labs(title = "Results for Primary Aim Type 3", subtitle = "Effect under the primary pairwise comparison:\n (BMOD, AUGMENT) versus (MED, AUGMENT)")
+
+# Draw point estimates and 95% CI's
+g <- g + geom_errorbar(aes(x=2, ymin = dat_plot[["lower"]][1], ymax = dat_plot[["upper"]][1]), width=.2, size = 2, colour = "firebrick")
+g <- g + geom_point(aes(x = 2, y = dat_plot[["estimate"]][1]), size = 8, colour = c("firebrick"))
+
+# Draw horizontal line at y=0
+g <- g + geom_hline(yintercept=0, linetype="dashed", color = "skyblue", size=3)
+
+# Reveal plot
+g
+```
+
+::: column-margin
+[Visual check: does the 95% CI cross zero (horizontal dashed blue line)?]{style="color:red;"}
+:::
+
+::: column-margin
+[Workflow for Primary Aim Type 3 is completed.]{style="color:red;"}
+:::
+
+::: column-margin
+![Colored shapes indicate the primary comparison of interest](assets/primary_comparison.png)
+:::
+
+# Knowledge Check
+
+If we included response status (`R`) in our regression model for Typical Primary Aim 3 as in the model below, may we still interpret $2 \beta_1 - 2 \beta_3$ as the **causal effect** of (BMOD, AUGMENT) versus (MED, AUGMENT)?
+
+$$
+E\left[Y_2(A_1, A_2) | \mathbf{X}, R\right] = \beta_0 + \beta_1 A_{1} + \beta_2 A_2 + \beta_3 A_1 A_2 + \beta_4 X_{1c} + \beta_5 X_{2c} + \beta_6 X_{3c} + \beta_7 R
+$$
