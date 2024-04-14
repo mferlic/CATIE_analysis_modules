@@ -513,7 +513,7 @@ dat_minus_one_pseudodata <- dat_rows_to_replicate %>% mutate(A2 = -1)
 dat_smart_replicated <- rbind(dat_rows_not_to_replicate,
                               dat_plus_one_pseudodata,
                               dat_minus_one_pseudodata) %>%
-  arrange(ID) # crucial we arrange dataset by ID for geeglm to idnetify the "clusters"
+  arrange(ID) # crucial that we arrange dataset by ID in order for geeglm to properly identify the "clusters"
 ```
 
 ::: column-margin
@@ -573,6 +573,7 @@ $$
 :::
 
 ```{r}
+# we arrange by ID so that geeglm properly accounts for the duplicated units. See ?geeglm for details
 dat_smart_replicated <- dat_smart_replicated %>% arrange(ID)
 
 model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2) 
@@ -655,20 +656,20 @@ $$
 ::: {.column-margin style="font-size: 14px;"}
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                       | Value |
-|------------------------------------------------------|------------------|
-| $$                                                                                                                             
-               \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                          
-                $$                                                                                                               | 2.734 |
-| $$                                                                                                                             
-                \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                          
-                $$                                                                                                               | 3.789 |
-| $$                                                                                                                             
-                \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                          
-                $$                                                                                                               | 2.253 |
-| $$                                                                                                                             
-                \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                           
-                $$                                                                                                               | 2.881 |
+| Quantity                                                                                                                          | Value |
+|-----------------------------------------------------|-------------------|
+| $$                                                                                                                                
+                \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                            
+                 $$                                                                                                                 | 2.734 |
+| $$                                                                                                                                
+                 \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                            
+                 $$                                                                                                                 | 3.789 |
+| $$                                                                                                                                
+                 \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                            
+                 $$                                                                                                                 | 2.253 |
+| $$                                                                                                                                
+                 \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                             
+                 $$                                                                                                                 | 2.881 |
 :::
 
 ```{r}
@@ -700,11 +701,11 @@ Step 6: Obtain estimated effect
 ::: column-margin
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                                                                                                                                                                                                                                                 | Value |
-|-------------------------------------------------------|-----------------|
-| $$                                                                                                                                                                                                                                                                                                                                                       
-                     \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                          
-                     $$                                                                                                                                                                                                                                                                                                                                    | 1.056 |
+| Quantity                                                                                                                                                                                                                                                                                                                                                    | Value |
+|------------------------------------------------------|------------------|
+| $$                                                                                                                                                                                                                                                                                                                                                          
+                      \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                            
+                      $$                                                                                                                                                                                                                                                                                                                                      | 1.056 |
 :::
 
 Let's suppose that the **primary pairwise comparison of interest** is

@@ -23,7 +23,7 @@ estimate <- function(fit, combos) {
   } else if (is(fit, "geeglm")) {
     var <- fit$geese$vbeta # always use robust standard errors
   } else {
-    stop("fit is not of class geeM or geeglm")
+    var <- vcov(fit)
   }
 
 
