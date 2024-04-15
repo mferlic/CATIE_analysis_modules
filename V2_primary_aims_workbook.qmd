@@ -655,20 +655,20 @@ $$
 ::: {.column-margin style="font-size: 14px;"}
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                          | Value |
-|-----------------------------------------------------------------------------------------------------------------------------------|-------|
-| $$                                                                                                                                
-                \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                            
-                 $$                                                                                                                 | 2.734 |
-| $$                                                                                                                                
-                 \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                            
-                 $$                                                                                                                 | 3.789 |
-| $$                                                                                                                                
-                 \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                            
-                 $$                                                                                                                 | 2.253 |
-| $$                                                                                                                                
-                 \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                             
-                 $$                                                                                                                 | 2.881 |
+| Quantity                                                                                                                             | Value |
+|--------------------------------------------------------------------------------------------------------------------------------------|-------|
+| $$                                                                                                                                   
+                 \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                              
+                  $$                                                                                                                   | 2.734 |
+| $$                                                                                                                                   
+                  \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                              
+                  $$                                                                                                                   | 3.789 |
+| $$                                                                                                                                   
+                  \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                              
+                  $$                                                                                                                   | 2.253 |
+| $$                                                                                                                                   
+                  \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                               
+                  $$                                                                                                                   | 2.881 |
 :::
 
 ```{r}
@@ -700,11 +700,11 @@ Step 6: Obtain estimated effect
 ::: column-margin
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                                                                                                                                                                                                                                                    | Value |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
-| $$                                                                                                                                                                                                                                                                                                                                                          
-                      \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                            
-                      $$                                                                                                                                                                                                                                                                                                                                      | 1.056 |
+| Quantity                                                                                                                                                                                                                                                                                                                                                       | Value |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
+| $$                                                                                                                                                                                                                                                                                                                                                             
+                       \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                              
+                       $$                                                                                                                                                                                                                                                                                                                                        | 1.056 |
 :::
 
 Let's suppose that the **primary pairwise comparison of interest** is
