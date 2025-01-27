@@ -47,12 +47,9 @@ options(digits = 3)
 
 # The Motivating Study
 
-Our motivating study is the ADHD SMART (PI: Pelham), an example of a
-prototypical SMART. A picture of this schematic is also available in the
-handout `V2_handout_motivating_study.pdf`.
+Our motivating study is the ADHD SMART (PI: Pelham), an example of a prototypical SMART. A picture of this schematic is also available in the handout `V2_handout_motivating_study.pdf`.
 
-![](assets/adhd_smart_design_with_probs.png){width="6in,"
-height="4.5in"}
+![](assets/adhd_smart_design_with_probs.png){width="6in," height="4.5in"}
 
 # Set up
 
@@ -95,57 +92,37 @@ source("R/estimate.R")
 
 -   `ID` subject identifier
 
--   `odd` Oppositional Defiant Disorder diagnosis, reflecting whether
-    the child was (coded as 1) or was not (coded as 0) diagnosed with
-    ODD before the first-stage intervention.
+-   `odd` Oppositional Defiant Disorder diagnosis, reflecting whether the child was (coded as 1) or was not (coded as 0) diagnosed with ODD before the first-stage intervention.
 
--   `severity` ADHD score, reflecting ADHD symptoms at the end of the
-    previous school year (larger values reflect greater symptoms). Range
-    0-10.
+-   `severity` ADHD score, reflecting ADHD symptoms at the end of the previous school year (larger values reflect greater symptoms). Range 0-10.
 
--   `priormed` medication prior to first-stage intervention, reflecting
-    whether the child did (coded as 1) or did not (coded as 0) receive
-    medication during the previous school year.
+-   `priormed` medication prior to first-stage intervention, reflecting whether the child did (coded as 1) or did not (coded as 0) receive medication during the previous school year.
 
 -   `race` white (coded 1) versus non-white (coded 0).
 
 **Intermediate covariates:**
 
--   `R` response status. R = 0 if child was classified as non-responder
-    to first stage intervention, R = 1 if they were classified as a
-    responder.
+-   `R` response status. R = 0 if child was classified as non-responder to first stage intervention, R = 1 if they were classified as a responder.
 
--   `NRtime` months at which child was classified as non-responder.
-    Range 2-8. Undefined for responders.
+-   `NRtime` months at which child was classified as non-responder. Range 2-8. Undefined for responders.
 
--   `adherence` adherence to the stage 1 intervention. Reflecting
-    whether the child did (coded as 1) or did not (coded as 0) show high
-    adherence to initial treatment.
+-   `adherence` adherence to the stage 1 intervention. Reflecting whether the child did (coded as 1) or did not (coded as 0) show high adherence to initial treatment.
 
 **Treatments:**
 
-We use contrast coding (effect coding) to denote the two levels of
-treatment assignment. The primary benefit of effect coding is that we
-get interpretable estimates of both the main effects and interactions.
+We use contrast coding (effect coding) to denote the two levels of treatment assignment. The primary benefit of effect coding is that we get interpretable estimates of both the main effects and interactions.
 
--   `A1` stage 1 treatment assignment. Randomized with probability $0.5$
-    to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD,
-    $A1=1$).
+-   `A1` stage 1 treatment assignment. Randomized with probability $0.5$ to Medication (MED, $A1=-1$) or Behavioral Intervention (BMOD, $A1=1$).
 
--   `A2` stage 2 treatment assignment for non-responders. Non-responders
-    we randomized with probability $0.5$ to receive Augmented (AUG,
-    $A2=-1$) or Intensified (INT, $A2=1$) care. `A2` is coded as `NA`
-    for responders.
+-   `A2` stage 2 treatment assignment for non-responders. Non-responders we randomized with probability $0.5$ to receive Augmented (AUG, $A2=-1$) or Intensified (INT, $A2=1$) care. `A2` is coded as `NA` for responders.
 
 **Outcomes**
 
--   `Y0` baseline school performance (higher values reflect better
-    performance).
+-   `Y0` baseline school performance (higher values reflect better performance).
 
 -   `Y1` mid-year school performance.
 
--   `Y2` end-of-year school performance (**this variable is the primary
-    outcome for each primary aim**)
+-   `Y2` end-of-year school performance (**this variable is the primary outcome for each primary aim**)
 :::
 
 ```{r}
@@ -168,12 +145,10 @@ dat_smart <- dat_adhd
 ```
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/adhd_smart_aim1.png)
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim1.png)
 :::
 
-Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for
-you) and center each baseline covariate by its own grand mean
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own grand mean
 
 ```{r}
 dat_smart <- dat_smart %>%
@@ -186,10 +161,7 @@ dat_smart <- dat_smart %>%
 
 Step 2. Estimate parameters in regression model
 
-We used Generalized Estimating Equations (GEE) to estimate the model for
-the mean under each first-stage intervention option; obtaining the
-robust standard error was simple: we only needed to ensure that
-`std.err = "san.se"` in the `geeglm` function.
+We used Generalized Estimating Equations (GEE) to estimate the model for the mean under each first-stage intervention option; obtaining the robust standard error was simple: we only needed to ensure that `std.err = "san.se"` in the `geeglm` function.
 
 ```{r}
 # geeglm is a function in the geepack package
@@ -229,9 +201,7 @@ $$
 
 Step 3. Estimate key quantities of interest
 
-We typically have the mean of $Y_2$ under each first-stage intervention
-option and the main effect of first-stage intervention options as our
-key quantities of interest.
+We typically have the mean of $Y_2$ under each first-stage intervention option and the main effect of first-stage intervention options as our key quantities of interest.
 
 ```{r}
 # The step above creates three rows and six columns in L.
@@ -275,16 +245,14 @@ print(est_contrasts)
 :::
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/adhd_smart_aim1.png)
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim1.png)
 :::
 
 This output says that:
 
 -   The estimated mean of $Y_2$ under $A_1=+1$ (BMOD) is `3.2653`
 -   The estimated mean of $Y_2$ under $A_1=-1$ (MED) is `2.5136`
--   The estimated main effect of first-stage intervention options is
-    `0.7517`
+-   The estimated main effect of first-stage intervention options is `0.7517`
 
 # Analysis code for Primary Aim Type 2
 
@@ -302,13 +270,10 @@ dat_smart <- dat_adhd
 ```
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/adhd_smart_aim2.png)
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim2.png)
 :::
 
-Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for
-you) and center each baseline covariate by its own mean ***among
-non-responders***
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own mean ***among non-responders***
 
 ```{r}
 dat_smart_nonresponders <- dat_smart %>%
@@ -362,10 +327,7 @@ $$
 
 Step 3. Estimate key quantities of interest
 
-We typically have the mean of $Y_2$ among non-responders under each
-second-stage intervention option and the main effect of second-stage
-intervention options among non-responders as our key quantities of
-interest.
+We typically have the mean of $Y_2$ among non-responders under each second-stage intervention option and the main effect of second-stage intervention options among non-responders as our key quantities of interest.
 
 ```{r}
 L <- rbind(
@@ -397,16 +359,14 @@ print(est_contrasts)
 :::
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/adhd_smart_aim2.png)
+![Colored shapes indicate the primary comparison of interest](assets/adhd_smart_aim2.png)
 :::
 
 This output says that:
 
 -   The estimated mean of $Y_2$ under $A_2=+1$ (Intensify) is `2.2952`
 -   The estimated mean of $Y_2$ under $A_2=-1$ (Augment) is `3.1351`
--   The estimated main effect of second-stage intervention options among
-    **non-responders** to first-stage intervention options? `-0.8399`
+-   The estimated main effect of second-stage intervention options among **non-responders** to first-stage intervention options? `-0.8399`
 
 # Analysis code for Primary Aim Type 3
 
@@ -424,12 +384,10 @@ dat_smart <- dat_adhd
 ```
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/primary_comparison.png)
+![Colored shapes indicate the primary comparison of interest](assets/primary_comparison.png)
 :::
 
-Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for
-you) and center each baseline covariate by its own grand mean
+Step 1. Contrast code stage-1 and stage-2 treatment indicators (done for you) and center each baseline covariate by its own grand mean
 
 ```{r}
 dat_smart <- dat_smart %>%
@@ -437,20 +395,16 @@ dat_smart <- dat_smart %>%
   mutate(odd_c = odd - mean(odd),                 # this creates X_1c
          severity_c = severity - mean(severity),  # this creates X_2c
          priormed_c = priormed - mean(priormed),  # this creates X_3c
-         race_c = race - mean(race))              # this creates X_4c
+         race_c = race - mean(race),              # this creates X_4c
+         Y0_c = Y0 - mean(Y0))                    # this creates Y0_c         
 ```
 
 Step 2. Create weights
 
-The actual numeric value of the weights (i.e., 2 and 4) can be obtained
-"by hand" by calculating the inverse (reciprocal) of the probability of
-being assigned to a particular adaptive intervention.
+The actual numeric value of the weights (i.e., 2 and 4) can be obtained "by hand" by calculating the inverse (reciprocal) of the probability of being assigned to a particular adaptive intervention.
 
--   For responders,
-    $W = 1 \Bigg/\left(\frac{1}{p_1}\right) = 1 \Bigg/\left(\frac{1}{2}\right) = 2$
--   For non-responders,
-    $W = 1 \Bigg/\left(\frac{1}{p_1}\right) \left(\frac{1}{p_2}\right) = 1 \Bigg/ \left(\frac{1}{2}\right) \left(\frac{1}{2}\right)$
-    = 4
+-   For responders, $W = 1 \Bigg/\left(\frac{1}{p_1}\right) = 1 \Bigg/\left(\frac{1}{2}\right) = 2$
+-   For non-responders, $W = 1 \Bigg/\left(\frac{1}{p_1}\right) \left(\frac{1}{p_2}\right) = 1 \Bigg/ \left(\frac{1}{2}\right) \left(\frac{1}{2}\right)$ = 4
 
 ```{r}
 # We need to create a new column that contains 
@@ -465,13 +419,9 @@ dat_smart <- dat_smart %>%
 
 Step 3. Create new dataset with replicated rows for responders
 
-We restructure the original dataset such that instead of one observation
-per **responder**, the new dataset includes two copies of each
-**responder's** observation. **Non-responders'** observations will
-remain intact (preserved) in the replication step.
+We restructure the original dataset such that instead of one observation per **responder**, the new dataset includes two copies of each **responder's** observation. **Non-responders'** observations will remain intact (preserved) in the replication step.
 
-We *first* save **non-responders**' observations into a dataset of their
-own.
+We *first* save **non-responders**' observations into a dataset of their own.
 
 ```{r}
 # Save non-responders' observations 
@@ -483,9 +433,7 @@ dat_rows_not_to_replicate <- dat_smart %>% filter(R==0)
 [Restructure the dataset: STEP 1]{style="color:red;"}
 :::
 
-Recall that `A2` was coded as `NA` in the original dataset. The key in
-the replication step is to replace `NA` in `A2` by `+1` in the first
-copy and `NA` in `A2` by `-1` in the second copy.
+Recall that `A2` was coded as `NA` in the original dataset. The key in the replication step is to replace `NA` in `A2` by `+1` in the first copy and `NA` in `A2` by `-1` in the second copy.
 
 We *next* save **responders**' observations into a dataset of their own.
 
@@ -555,10 +503,7 @@ dat_smart_replicated %>%
 :::
 
 ::: {.callout-caution appearance="simple"}
-Center covariates **before** weighting and replicating and not **after**
-weighting and replicating. In other words, if Step 1 was performed after
-both Steps 2 and 3, then estimates of the treatment effect will not
-necessarily be correct!
+Center covariates **before** weighting and replicating and not **after** weighting and replicating. In other words, if Step 1 was performed after both Steps 2 and 3, then estimates of the treatment effect will not necessarily be correct!
 :::
 
 Step 4. Estimate parameters in regression model
@@ -635,16 +580,14 @@ $$
 :::
 
 ::: column-margin
-[Contrast coding logic: Mean under (MED, AUGMENT)]{style="color:red;"}
-$$
+[Contrast coding logic: Mean under (MED, AUGMENT)]{style="color:red;"} $$
 \begin{split}
 E\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] &= \beta_0 {\color{royalblue}{(1)}} + \beta_1 {\color{royalblue}{(-1)}} + \beta_2 {\color{royalblue}{(-1)}} + \beta_3 {\color{royalblue}{(1)}} \\
 &+ \beta_4 {\color{royalblue}{(0)}} + \beta_5 {\color{royalblue}{(0)}} + \beta_6 {\color{royalblue}{(0)}} + \beta_7 {\color{royalblue}{(0)}}
 \end{split}
 $$
 
-[Contrast coding logic: Mean under (BMOD, AUGMENT)]{style="color:red;"}
-$$
+[Contrast coding logic: Mean under (BMOD, AUGMENT)]{style="color:red;"} $$
 \begin{split}
 E\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] &= \beta_0 {\color{royalblue}{(1)}} + \beta_1 {\color{royalblue}{(1)}} + \beta_2 {\color{royalblue}{(-1)}} + \beta_3 {\color{royalblue}{(-1)}} \\
 &+ \beta_4 {\color{royalblue}{(0)}} + \beta_5 {\color{royalblue}{(0)}} + \beta_6 {\color{royalblue}{(0)}} + \beta_7 {\color{royalblue}{(0)}}
@@ -655,20 +598,20 @@ $$
 ::: {.column-margin style="font-size: 14px;"}
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                             | Value |
-|--------------------------------------------------------------------------------------------------------------------------------------|-------|
+| Quantity | Value |
+|--------------------------------------------------------|----------------|
 | $$                                                                                                                                   
                  \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                              
-                  $$                                                                                                                   | 2.734 |
+                  $$ | 2.734 |
 | $$                                                                                                                                   
                   \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                              
-                  $$                                                                                                                   | 3.789 |
+                  $$ | 3.789 |
 | $$                                                                                                                                   
                   \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                              
-                  $$                                                                                                                   | 2.253 |
+                  $$ | 2.253 |
 | $$                                                                                                                                   
                   \widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{1}}) | \mathbf{X}\right]                               
-                  $$                                                                                                                   | 2.881 |
+                  $$ | 2.881 |
 :::
 
 ```{r}
@@ -700,15 +643,14 @@ Step 6: Obtain estimated effect
 ::: column-margin
 [Correspondence between output and equation]{style="color:red;"}
 
-| Quantity                                                                                                                                                                                                                                                                                                                                                       | Value |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
+| Quantity | Value |
+|---------------------------------------------------------|---------------|
 | $$                                                                                                                                                                                                                                                                                                                                                             
                        \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                              
-                       $$                                                                                                                                                                                                                                                                                                                                        | 1.056 |
+                       $$ | 1.056 |
 :::
 
-Let's suppose that the **primary pairwise comparison of interest** is
-the **causal effect** of (BMOD, AUGMENT) versus (MED, AUGMENT).
+Let's suppose that the **primary pairwise comparison of interest** is the **causal effect** of (BMOD, AUGMENT) versus (MED, AUGMENT).
 
 ```{r}
 D <- rbind(
@@ -799,8 +741,7 @@ g
 ```
 
 ::: column-margin
-[Visual check: does the 95% CI cross zero (horizontal dashed blue
-line)?]{style="color:red;"}
+[Visual check: does the 95% CI cross zero (horizontal dashed blue line)?]{style="color:red;"}
 :::
 
 ::: column-margin
@@ -808,16 +749,70 @@ line)?]{style="color:red;"}
 :::
 
 ::: column-margin
-![Colored shapes indicate the primary comparison of
-interest](assets/primary_comparison.png)
+![Colored shapes indicate the primary comparison of interest](assets/primary_comparison.png)
 :::
+
+## Analysis Results for Module 5
+
+We can obtain valid estimates of the causal effects using any subset of covariates. Below, we show the results if we use one covariate or no covariates. These results exactly match those shown in Module 5.
+
+This analysis uses only baseline school performance: `Y0`.
+
+```{r}
+model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2) + Y0_c,
+                # specify which column contains the participant ID's
+                id = ID,  
+                # remember to use the weighted and replicated dataset
+                data = dat_smart_replicated,  
+                # remember to weight each row appropriately
+                weights = design_weights,  
+                # ask the computer to treat replicates as independent units
+                corstr = "independence",  
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+summary(model)
+```
+
+```{r}
+L <- rbind(
+  "AI#1 (MED, AUGMENT)"    = c(1, -1, -1,  1, 0),
+  "AI#2 (BMOD, AUGMENT)"   = c(1,  1, -1, -1, 0),
+  "AI#3 (MED, INTENSIFY)"  = c(1, -1,  1, -1, 0),
+  "AI#4 (BMOD, INTENSIFY)" = c(1,  1,  1,  1, 0),
+  "AI#1 vs. AI#2" = c(0, -2, 0, 2, 0),
+  "AI#1 vs. AI#3" = c(0, 0, -2, 2, 0),
+  "AI#1 vs. AI#4" = c(0, -2, -2, 0, 0)
+)
+
+est_contrasts <- estimate(fit = model, combos = L)
+print(est_contrasts)
+```
+
+This analysis uses no covariates.
+
+```{r}
+model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2),
+                # specify which column contains the participant ID's
+                id = ID,  
+                # remember to use the weighted and replicated dataset
+                data = dat_smart_replicated,  
+                # remember to weight each row appropriately
+                weights = design_weights,  
+                # ask the computer to treat replicates as independent units
+                corstr = "independence",  
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+summary(model)
+```
+
+```{r}
+est_contrasts <- estimate(fit = model, combos = L[,1:4])
+print(est_contrasts)
+```
 
 # Knowledge Check
 
-If we included response status (`R`) in our regression model for Typical
-Primary Aim 3 as in the model below, may we still interpret
-$2 \beta_1 - 2 \beta_3$ as the **causal effect** of (BMOD, AUGMENT)
-versus (MED, AUGMENT)?
+If we included response status (`R`) in our regression model for Typical Primary Aim 3 as in the model below, may we still interpret $2 \beta_1 - 2 \beta_3$ as the **causal effect** of (BMOD, AUGMENT) versus (MED, AUGMENT)?
 
 $$
 E\left[Y_2(A_1, A_2) | \mathbf{X}, R\right] = \beta_0 + \beta_1 A_{1} + \beta_2 A_2 + \beta_3 A_1 A_2 + \beta_4 X_{1c} + \beta_5 X_{2c} + \beta_6 X_{3c} + \beta_7 R
