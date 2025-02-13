@@ -599,7 +599,7 @@ $$
 [Correspondence between output and equation]{style="color:red;"}
 
 | Quantity | Value |
-|--------------------------------------------------------|----------------|
+|------------------------------------------------------|------------------|
 | $$                                                                                                                                   
                  \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right]                              
                   $$ | 2.734 |
@@ -644,7 +644,7 @@ Step 6: Obtain estimated effect
 [Correspondence between output and equation]{style="color:red;"}
 
 | Quantity | Value |
-|---------------------------------------------------------|---------------|
+|-------------------------------------------------------|-----------------|
 | $$                                                                                                                                                                                                                                                                                                                                                             
                        \begin{split}&\widehat{E}\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] - \widehat{E}\left[Y_2({\color{seagreen}{-1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] \\&= \widehat{\beta_1} {\color{royalblue}{(2)}} + \widehat{\beta_3} {\color{royalblue}{(-2)}} \\\end{split}                              
                        $$ | 1.056 |
@@ -756,7 +756,62 @@ g
 
 We can obtain valid estimates of the causal effects using any subset of covariates. Below, we show the results if we use one covariate or no covariates. These results exactly match those shown in Module 5.
 
-This analysis uses only baseline school performance: `Y0`.
+This first analysis shows the results if we filter down to participants consistent with AI#1 or AI#2.
+First, we'll use `Y0` as a covariate.
+
+```{r}
+dat_ai12 <- filter(
+  dat_smart,
+  (R == 1) | (A2 == -1))
+
+model <- geeglm(Y2 ~ A1 + Y0_c,
+                # specify which column contains the participant ID's
+                id = ID,  
+                # remember to use the weighted and replicated dataset
+                data = dat_ai12,  
+                # remember to weight each row appropriately
+                weights = design_weights,  
+                # ask the computer to treat replicates as independent units
+                corstr = "independence",  
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+summary(model)
+```
+
+```{r}
+L <- rbind(
+  "AI#1 (MED, AUGMENT)"    = c(1, -1, 0),
+  "AI#2 (BMOD, AUGMENT)"   = c(1,  1, 0),
+  "AI#1 vs. AI#2" = c(0, -2, 0)
+)
+
+est_contrasts <- estimate(fit = model, combos = L)
+print(est_contrasts)
+```
+Now we perform the same analysis without covariates.
+
+```{r}
+model <- geeglm(Y2 ~ A1,
+                # specify which column contains the participant ID's
+                id = ID,  
+                # remember to use the weighted and replicated dataset
+                data = dat_ai12,  
+                # remember to weight each row appropriately
+                weights = design_weights,  
+                # ask the computer to treat replicates as independent units
+                corstr = "independence",  
+                # ask the computer to give you robust standard errors
+                std.err = "san.se") 
+summary(model)
+```
+
+```{r}
+est_contrasts <- estimate(fit = model, combos = L[,1:2])
+print(est_contrasts)
+```
+
+This second approach analyzes all four AIs at the same time.
+First, we fit a model using `Y0` as a baseline covariate.
 
 ```{r}
 model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2) + Y0_c,
@@ -788,7 +843,7 @@ est_contrasts <- estimate(fit = model, combos = L)
 print(est_contrasts)
 ```
 
-This analysis uses no covariates.
+Then we fit another model with no covariates.
 
 ```{r}
 model <- geeglm(Y2 ~ A1 + A2 + I(A1*A2),
