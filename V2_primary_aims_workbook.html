@@ -4307,8 +4307,8 @@ E\left[Y_2({\color{seagreen}{1}}, {\color{seagreen}{-1}}) | \mathbf{X}\right] &a
 <p><span style="color:red;">Correspondence between output and equation</span></p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 77%">
-<col style="width: 22%">
+<col style="width: 75%">
+<col style="width: 25%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -4382,8 +4382,8 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 <p><span style="color:red;">Correspondence between output and equation</span></p>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 79%">
-<col style="width: 20%">
+<col style="width: 76%">
+<col style="width: 23%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -4459,20 +4459,125 @@ Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&
 <section id="analysis-results-for-module-5" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="analysis-results-for-module-5"><span class="header-section-number">5.4</span> Analysis Results for Module 5</h2>
 <p>We can obtain valid estimates of the causal effects using any subset of covariates. Below, we show the results if we use one covariate or no covariates. These results exactly match those shown in Module 5.</p>
-<p>This analysis uses only baseline school performance: <code>Y0</code>.</p>
+<p>This first analysis shows the results if we filter down to participants consistent with AI#1 or AI#2. First, we’ll use <code>Y0</code> as a covariate.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1 <span class="sc">+</span> A2 <span class="sc">+</span> <span class="fu">I</span>(A1<span class="sc">*</span>A2) <span class="sc">+</span> Y0_c,</span>
-<span id="cb43-2"><a href="#cb43-2"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
-<span id="cb43-3"><a href="#cb43-3"></a>                <span class="at">id =</span> ID,  </span>
-<span id="cb43-4"><a href="#cb43-4"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
-<span id="cb43-5"><a href="#cb43-5"></a>                <span class="at">data =</span> dat_smart_replicated,  </span>
-<span id="cb43-6"><a href="#cb43-6"></a>                <span class="co"># remember to weight each row appropriately</span></span>
-<span id="cb43-7"><a href="#cb43-7"></a>                <span class="at">weights =</span> design_weights,  </span>
-<span id="cb43-8"><a href="#cb43-8"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
-<span id="cb43-9"><a href="#cb43-9"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
-<span id="cb43-10"><a href="#cb43-10"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
-<span id="cb43-11"><a href="#cb43-11"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
-<span id="cb43-12"><a href="#cb43-12"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a>dat_ai12 <span class="ot">&lt;-</span> <span class="fu">filter</span>(</span>
+<span id="cb43-2"><a href="#cb43-2"></a>  dat_smart,</span>
+<span id="cb43-3"><a href="#cb43-3"></a>  (R <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">|</span> (A2 <span class="sc">==</span> <span class="sc">-</span><span class="dv">1</span>))</span>
+<span id="cb43-4"><a href="#cb43-4"></a></span>
+<span id="cb43-5"><a href="#cb43-5"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1 <span class="sc">+</span> Y0_c,</span>
+<span id="cb43-6"><a href="#cb43-6"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
+<span id="cb43-7"><a href="#cb43-7"></a>                <span class="at">id =</span> ID,  </span>
+<span id="cb43-8"><a href="#cb43-8"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
+<span id="cb43-9"><a href="#cb43-9"></a>                <span class="at">data =</span> dat_ai12,  </span>
+<span id="cb43-10"><a href="#cb43-10"></a>                <span class="co"># remember to weight each row appropriately</span></span>
+<span id="cb43-11"><a href="#cb43-11"></a>                <span class="at">weights =</span> design_weights,  </span>
+<span id="cb43-12"><a href="#cb43-12"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
+<span id="cb43-13"><a href="#cb43-13"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
+<span id="cb43-14"><a href="#cb43-14"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
+<span id="cb43-15"><a href="#cb43-15"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
+<span id="cb43-16"><a href="#cb43-16"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+geeglm(formula = Y2 ~ A1 + Y0_c, data = dat_ai12, weights = design_weights, 
+    id = ID, corstr = &quot;independence&quot;, std.err = &quot;san.se&quot;)
+
+ Coefficients:
+            Estimate Std.err  Wald Pr(&gt;|W|)    
+(Intercept)    3.277   0.117 779.4  &lt; 2e-16 ***
+A1             0.451   0.119  14.4  0.00015 ***
+Y0_c           2.096   0.217  93.6  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Correlation structure = independence 
+Estimated Scale Parameters:
+
+            Estimate Std.err
+(Intercept)     1.21   0.162
+Number of clusters:   97  Maximum cluster size: 1 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>L <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb45-2"><a href="#cb45-2"></a>  <span class="st">&quot;AI#1 (MED, AUGMENT)&quot;</span>    <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb45-3"><a href="#cb45-3"></a>  <span class="st">&quot;AI#2 (BMOD, AUGMENT)&quot;</span>   <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb45-4"><a href="#cb45-4"></a>  <span class="st">&quot;AI#1 vs. AI#2&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>)</span>
+<span id="cb45-5"><a href="#cb45-5"></a>)</span>
+<span id="cb45-6"><a href="#cb45-6"></a></span>
+<span id="cb45-7"><a href="#cb45-7"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L)</span>
+<span id="cb45-8"><a href="#cb45-8"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     Estimate 95% LCL 95% UCL    SE  p-value    
+AI#1 (MED, AUGMENT)    2.8265  2.5419  3.1111 0.145  &lt; 1e-04 ***
+AI#2 (BMOD, AUGMENT)   3.7277  3.3628  4.0925 0.186  &lt; 1e-04 ***
+AI#1 vs. AI#2         -0.9012 -1.3665 -0.4359 0.237 0.000147 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+</div>
+</div>
+<p>Now we perform the same analysis without covariates.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1,</span>
+<span id="cb47-2"><a href="#cb47-2"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
+<span id="cb47-3"><a href="#cb47-3"></a>                <span class="at">id =</span> ID,  </span>
+<span id="cb47-4"><a href="#cb47-4"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
+<span id="cb47-5"><a href="#cb47-5"></a>                <span class="at">data =</span> dat_ai12,  </span>
+<span id="cb47-6"><a href="#cb47-6"></a>                <span class="co"># remember to weight each row appropriately</span></span>
+<span id="cb47-7"><a href="#cb47-7"></a>                <span class="at">weights =</span> design_weights,  </span>
+<span id="cb47-8"><a href="#cb47-8"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
+<span id="cb47-9"><a href="#cb47-9"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
+<span id="cb47-10"><a href="#cb47-10"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
+<span id="cb47-11"><a href="#cb47-11"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
+<span id="cb47-12"><a href="#cb47-12"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+geeglm(formula = Y2 ~ A1, data = dat_ai12, weights = design_weights, 
+    id = ID, corstr = &quot;independence&quot;, std.err = &quot;san.se&quot;)
+
+ Coefficients:
+            Estimate Std.err  Wald Pr(&gt;|W|)    
+(Intercept)    3.250   0.161 405.9   &lt;2e-16 ***
+A1             0.583   0.161  13.1    3e-04 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Correlation structure = independence 
+Estimated Scale Parameters:
+
+            Estimate Std.err
+(Intercept)     2.32   0.278
+Number of clusters:   97  Maximum cluster size: 1 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L[,<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])</span>
+<span id="cb49-2"><a href="#cb49-2"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     Estimate 95% LCL 95% UCL    SE  p-value    
+AI#1 (MED, AUGMENT)    2.6660  2.2429  3.0892 0.216  &lt; 1e-04 ***
+AI#2 (BMOD, AUGMENT)   3.8330  3.3632  4.3028 0.240  &lt; 1e-04 ***
+AI#1 vs. AI#2         -1.1670 -1.7992 -0.5347 0.323 0.000297 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+</div>
+</div>
+<p>This second approach analyzes all four AIs at the same time. First, we fit a model using <code>Y0</code> as a baseline covariate.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1 <span class="sc">+</span> A2 <span class="sc">+</span> <span class="fu">I</span>(A1<span class="sc">*</span>A2) <span class="sc">+</span> Y0_c,</span>
+<span id="cb51-2"><a href="#cb51-2"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
+<span id="cb51-3"><a href="#cb51-3"></a>                <span class="at">id =</span> ID,  </span>
+<span id="cb51-4"><a href="#cb51-4"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
+<span id="cb51-5"><a href="#cb51-5"></a>                <span class="at">data =</span> dat_smart_replicated,  </span>
+<span id="cb51-6"><a href="#cb51-6"></a>                <span class="co"># remember to weight each row appropriately</span></span>
+<span id="cb51-7"><a href="#cb51-7"></a>                <span class="at">weights =</span> design_weights,  </span>
+<span id="cb51-8"><a href="#cb51-8"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
+<span id="cb51-9"><a href="#cb51-9"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
+<span id="cb51-10"><a href="#cb51-10"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
+<span id="cb51-11"><a href="#cb51-11"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
+<span id="cb51-12"><a href="#cb51-12"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -4499,18 +4604,18 @@ Number of clusters:   150  Maximum cluster size: 2 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>L <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb45-2"><a href="#cb45-2"></a>  <span class="st">&quot;AI#1 (MED, AUGMENT)&quot;</span>    <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb45-3"><a href="#cb45-3"></a>  <span class="st">&quot;AI#2 (BMOD, AUGMENT)&quot;</span>   <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>,  <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb45-4"><a href="#cb45-4"></a>  <span class="st">&quot;AI#3 (MED, INTENSIFY)&quot;</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb45-5"><a href="#cb45-5"></a>  <span class="st">&quot;AI#4 (BMOD, INTENSIFY)&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>,  <span class="dv">1</span>,  <span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb45-6"><a href="#cb45-6"></a>  <span class="st">&quot;AI#1 vs. AI#2&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">0</span>),</span>
-<span id="cb45-7"><a href="#cb45-7"></a>  <span class="st">&quot;AI#1 vs. AI#3&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">0</span>),</span>
-<span id="cb45-8"><a href="#cb45-8"></a>  <span class="st">&quot;AI#1 vs. AI#4&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
-<span id="cb45-9"><a href="#cb45-9"></a>)</span>
-<span id="cb45-10"><a href="#cb45-10"></a></span>
-<span id="cb45-11"><a href="#cb45-11"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L)</span>
-<span id="cb45-12"><a href="#cb45-12"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1"></a>L <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb53-2"><a href="#cb53-2"></a>  <span class="st">&quot;AI#1 (MED, AUGMENT)&quot;</span>    <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb53-3"><a href="#cb53-3"></a>  <span class="st">&quot;AI#2 (BMOD, AUGMENT)&quot;</span>   <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>,  <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb53-4"><a href="#cb53-4"></a>  <span class="st">&quot;AI#3 (MED, INTENSIFY)&quot;</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>,  <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb53-5"><a href="#cb53-5"></a>  <span class="st">&quot;AI#4 (BMOD, INTENSIFY)&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>,  <span class="dv">1</span>,  <span class="dv">1</span>,  <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb53-6"><a href="#cb53-6"></a>  <span class="st">&quot;AI#1 vs. AI#2&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">0</span>),</span>
+<span id="cb53-7"><a href="#cb53-7"></a>  <span class="st">&quot;AI#1 vs. AI#3&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">0</span>),</span>
+<span id="cb53-8"><a href="#cb53-8"></a>  <span class="st">&quot;AI#1 vs. AI#4&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb53-9"><a href="#cb53-9"></a>)</span>
+<span id="cb53-10"><a href="#cb53-10"></a></span>
+<span id="cb53-11"><a href="#cb53-11"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L)</span>
+<span id="cb53-12"><a href="#cb53-12"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                       Estimate 95% LCL 95% UCL    SE p-value    
 AI#1 (MED, AUGMENT)      2.7950  2.4979  3.0920 0.152  &lt;1e-04 ***
@@ -4524,20 +4629,20 @@ AI#1 vs. AI#4           -0.1530 -0.7281  0.4222 0.293  0.6022
 Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 </div>
 </div>
-<p>This analysis uses no covariates.</p>
+<p>Then we fit another model with no covariates.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1 <span class="sc">+</span> A2 <span class="sc">+</span> <span class="fu">I</span>(A1<span class="sc">*</span>A2),</span>
-<span id="cb47-2"><a href="#cb47-2"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
-<span id="cb47-3"><a href="#cb47-3"></a>                <span class="at">id =</span> ID,  </span>
-<span id="cb47-4"><a href="#cb47-4"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
-<span id="cb47-5"><a href="#cb47-5"></a>                <span class="at">data =</span> dat_smart_replicated,  </span>
-<span id="cb47-6"><a href="#cb47-6"></a>                <span class="co"># remember to weight each row appropriately</span></span>
-<span id="cb47-7"><a href="#cb47-7"></a>                <span class="at">weights =</span> design_weights,  </span>
-<span id="cb47-8"><a href="#cb47-8"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
-<span id="cb47-9"><a href="#cb47-9"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
-<span id="cb47-10"><a href="#cb47-10"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
-<span id="cb47-11"><a href="#cb47-11"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
-<span id="cb47-12"><a href="#cb47-12"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1"></a>model <span class="ot">&lt;-</span> <span class="fu">geeglm</span>(Y2 <span class="sc">~</span> A1 <span class="sc">+</span> A2 <span class="sc">+</span> <span class="fu">I</span>(A1<span class="sc">*</span>A2),</span>
+<span id="cb55-2"><a href="#cb55-2"></a>                <span class="co"># specify which column contains the participant ID&#39;s</span></span>
+<span id="cb55-3"><a href="#cb55-3"></a>                <span class="at">id =</span> ID,  </span>
+<span id="cb55-4"><a href="#cb55-4"></a>                <span class="co"># remember to use the weighted and replicated dataset</span></span>
+<span id="cb55-5"><a href="#cb55-5"></a>                <span class="at">data =</span> dat_smart_replicated,  </span>
+<span id="cb55-6"><a href="#cb55-6"></a>                <span class="co"># remember to weight each row appropriately</span></span>
+<span id="cb55-7"><a href="#cb55-7"></a>                <span class="at">weights =</span> design_weights,  </span>
+<span id="cb55-8"><a href="#cb55-8"></a>                <span class="co"># ask the computer to treat replicates as independent units</span></span>
+<span id="cb55-9"><a href="#cb55-9"></a>                <span class="at">corstr =</span> <span class="st">&quot;independence&quot;</span>,  </span>
+<span id="cb55-10"><a href="#cb55-10"></a>                <span class="co"># ask the computer to give you robust standard errors</span></span>
+<span id="cb55-11"><a href="#cb55-11"></a>                <span class="at">std.err =</span> <span class="st">&quot;san.se&quot;</span>) </span>
+<span id="cb55-12"><a href="#cb55-12"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -4563,8 +4668,8 @@ Number of clusters:   150  Maximum cluster size: 2 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L[,<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>])</span>
-<span id="cb49-2"><a href="#cb49-2"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1"></a>est_contrasts <span class="ot">&lt;-</span> <span class="fu">estimate</span>(<span class="at">fit =</span> model, <span class="at">combos =</span> L[,<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>])</span>
+<span id="cb57-2"><a href="#cb57-2"></a><span class="fu">print</span>(est_contrasts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                       Estimate 95% LCL 95% UCL    SE  p-value    
 AI#1 (MED, AUGMENT)      2.6660  2.2429  3.0892 0.216  &lt; 1e-04 ***
